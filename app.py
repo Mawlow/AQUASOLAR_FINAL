@@ -28,7 +28,7 @@ try:
         cred = credentials.Certificate(cred_dict)
     else:
         # For local development, use service account file
-        cred = credentials.Certificate('aquasolar-10c88-firebase-adminsdk-fbsvc-650df625a1.json')
+        cred = credentials.Certificate('aqua-7ced9-firebase-adminsdk-fbsvc-d94e9eb953.json')
     
     firebase_admin.initialize_app(cred)
     db = firestore.client()
