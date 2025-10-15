@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AquaSolar Dashboard</title>
+  <link href="{{ url_for('static', filename='css/tailwind.min.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen text-gray-800 p-4 sm:p-8">
+  <!-- Header -->
+<header class="flex flex-wrap items-center justify-between gap-4 mb-8 px-4 sm:px-0">
+  <!-- Left: Logo + Title -->
+  <div class="flex items-center gap-3 flex-shrink-0 w-full sm:w-auto justify-between sm:justify-start">
+    <div class="flex items-center gap-3">
+      <img src="{{ url_for('static', filename='images/Solar.png') }}" alt="Logo"
+           class="w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-md">
+      <h1 class="text-xl sm:text-3xl font-extrabold text-blue-700 tracking-tight">
+        AquaSolar Dashboard
+      </h1>
+    </div>
+
+    <!-- 🔔 Notification & 📜 History Icons -->
+    <div class="flex items-center gap-2 ml-auto sm:ml-4">
+
+      <!-- Notification -->
+      <div class="relative">
+        <button id="notif-btn"
+          class="relative flex items-center justify-center w-11 h-11 rounded-full bg-white shadow-md hover:bg-blue-50 transition">
+          <i data-lucide="bell" class="w-6 h-6 text-blue-700"></i>
+          <span id="notif-count"
+            class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-full px-1.5 py-0.5 hidden">
+            0
+          </span>
+        </button>
+
+        <!-- Notification Dropdown -->
+        <div id="notif-dropdown"
+          class="hidden absolute right-0 mt-2 w-64 sm:w-72 max-w-[85vw] bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
+          <div class="p-3 border-b font-semibold text-blue-700 text-sm sm:text-base bg-white sticky top-0">
+            🔔 Notifications
+          </div>
+          <ul id="notif-list" class="divide-y text-sm text-gray-700">
+            <li class="p-3 text-center text-gray-500">No notifications</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- History -->
+      <div class="relative">
+        <button id="history-btn"
+          class="relative flex items-center justify-center w-11 h-11 rounded-full bg-white shadow-md hover:bg-blue-50 transition">
+          <i data-lucide="history" class="w-6 h-6 text-blue-700"></i>
+        </button>
+
+        <!-- History Dropdown -->
+        <div id="history-dropdown"
+          class="hidden absolute right-0 mt-2 w-64 sm:w-72 max-w-[85vw] bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
+          <div class="flex items-center justify-between p-3 border-b font-semibold text-blue-700 text-sm sm:text-base bg-white sticky top-0">
+            <span>📜 History</span>
+            <button id="clear-history" class="text-xs text-red-500 hover:text-red-700 font-semibold">Clear</button>
+          </div>
+          <ul id="history-list" class="divide-y text-sm text-gray-700">
+            <li class="p-3 text-center text-gray-500">No history yet</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: User Info -->
+  <div class="flex flex-col sm:flex-row items-center sm:gap-4 w-full sm:w-auto justify-center sm:justify-end mt-3 sm:mt-0 text-center sm:text-right">
+    <p class="text-gray-700 text-sm">
+      Welcome, <span class="font-semibold text-blue-700">{{ user_name }}</span> 👋
+    </p>
+    <a href="{{ url_for('logout') }}"
+       class="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-xl shadow-md transition duration-200 text-sm sm:text-base mt-1 sm:mt-0">
+      Logout
+    </a>
+  </div>
+</header>
+
+  <!-- Dashboard Layout -->
+  <main class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+
+    <!-- Pump Control -->
+    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 hover:shadow-xl transition">
+      <h2 class="text-xl font-semibold text-blue-700 mb-3 flex items-center gap-2">🚰 Pump Control</h2>
+      <p class="mb-4 text-gray-700">Status:
+        <span id="pump-status" class="font-bold text-red-600">{{ status.pump }}</span>
+      </p>
+      <button id="toggle-pump-btn"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl shadow-md transition">
+        Toggle Pump
+      </button>
+    </section>
+
+    <!-- Water Consumption -->
+    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 hover:shadow-xl transition">
+      <h2 class="text-xl font-semibold text-blue-700 mb-3">💧 Water Consumption</h2>
+      <div class="space-y-2 text-gray-700">
+        <p>Today: <span id="consumption-day" class="font-bold text-green-600">{{ status.consumption_day }} L</span></p>
+        <p>This Week: <span id="consumption-week" class="font-bold text-yellow-600">{{ status.consumption_week }} L</span></p>
+        <p>This Month: <span id="consumption-month" class="font-bold text-red-600">{{ status.consumption_month }} L</span></p>
+      </div>
+    </section>
+
+    <!-- Inlet Flow -->
+    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 hover:shadow-xl transition">
+      <h2 class="text-xl font-semibold text-blue-700 mb-3">⬅️ Inlet Flow</h2>
+      <p class="mb-2 text-gray-700">Flow Rate: <span id="inlet-flow" class="font-bold text-blue-600">{{ status.flow_in }} L/min</span></p>
+      <p>Total Volume: <span id="inlet-volume" class="font-bold text-purple-600">{{ status.volume_in }} L</span></p>
+    </section>
+
+    <!-- Outlet Flow -->
+    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 hover:shadow-xl transition">
+      <h2 class="text-xl font-semibold text-blue-700 mb-3">➡️ Outlet Flow</h2>
+      <p class="mb-2 text-gray-700">Flow Rate: <span id="outlet-flow" class="font-bold text-blue-600">{{ status.flow_out }} L/min</span></p>
+      <p>Total Volume: <span id="outlet-volume" class="font-bold text-purple-600">{{ status.volume_out }} L</span></p>
+    </section>
+
+    <!-- Leakage -->
+    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 hover:shadow-xl transition">
+      <h2 class="text-xl font-semibold text-blue-700 mb-3">🚨 Leakage Detection</h2>
+      <p id="leak-status" class="text-green-600 font-bold text-lg">
+        {% if status.leakage %} ⚠️ Leakage Detected! {% else %} ✅ No Leakage {% endif %}
+      </p>
+    </section>
+
+    <!-- Battery -->
+    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 hover:shadow-xl transition md:col-span-2 lg:col-span-3">
+      <h2 class="text-xl font-semibold text-blue-700 mb-4">🔋 Battery Status</h2>
+      <div class="w-full bg-gray-200 rounded-full h-6 mb-3 overflow-hidden">
+        <div id="battery-bar"
+             class="bg-green-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all duration-500"
+             style="width: 80%;">
+          80%
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-6 text-gray-700">
+        <p>Voltage: <span id="battery-voltage" class="font-bold text-blue-600">{{ status.battery_voltage }} V</span></p>
+        <p>Current: <span id="current-consumed" class="font-bold text-purple-600">{{ status.current_consumed }} A</span></p>
+      </div>
+    </section>
+
+    <!-- Chart -->
+    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 md:col-span-2 lg:col-span-3 hover:shadow-xl transition">
+      <h2 class="text-xl font-semibold text-blue-700 mb-3">📈 Inlet Flow History</h2>
+      <canvas id="flowChart" class="w-full h-64"></canvas>
+    </section>
+
+  </main>
+
+  <!-- JS -->
+  <script>
+  lucide.createIcons();
+
+  const notifBtn = document.getElementById("notif-btn");
+  const notifDropdown = document.getElementById("notif-dropdown");
+  const notifList = document.getElementById("notif-list");
+  const notifCount = document.getElementById("notif-count");
+  let notifications = [];
+  let leakAlertShown = false;
+  let lowBatteryAlertShown = false;
+  let pumpLastState = "";
+
+  // Notification Toggle
+  notifBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    notifDropdown.classList.toggle("hidden");
+  });
+  document.addEventListener("click", (e) => {
+    if (!notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) notifDropdown.classList.add("hidden");
+  });
+
+  // --- History Feature ---
+  const historyBtn = document.getElementById("history-btn");
+  const historyDropdown = document.getElementById("history-dropdown");
+  const historyList = document.getElementById("history-list");
+  const clearHistoryBtn = document.getElementById("clear-history");
+  let historyData = JSON.parse(localStorage.getItem("aqua_history") || "[]");
+
+  historyBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    historyDropdown.classList.toggle("hidden");
+  });
+  document.addEventListener("click", (e) => {
+    if (!historyDropdown.contains(e.target) && !historyBtn.contains(e.target))
+      historyDropdown.classList.add("hidden");
+  });
+
+  function addHistoryEntry(message) {
+    const time = new Date().toLocaleTimeString();
+    historyData.unshift({ message, time });
+    if (historyData.length > 50) historyData.pop();
+    localStorage.setItem("aqua_history", JSON.stringify(historyData));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    if (historyData.length === 0) {
+      historyList.innerHTML = `<li class="p-3 text-center text-gray-500">No history yet</li>`;
+    } else {
+      historyList.innerHTML = historyData.map(h => `
+        <li class="p-3 hover:bg-blue-50">
+          <p class="font-semibold text-blue-700 break-words">${h.message}</p>
+          <p class="text-xs text-gray-500">${h.time}</p>
+        </li>`).join("");
+    }
+  }
+
+  clearHistoryBtn.addEventListener("click", () => {
+    historyData = [];
+    localStorage.removeItem("aqua_history");
+    renderHistory();
+  });
+
+  renderHistory();
+
+  // Add notification + history integration
+  function addNotification(message) {
+    const time = new Date().toLocaleTimeString();
+    notifications.unshift({ message, time });
+    notifList.innerHTML = notifications.map(n => `
+      <li class="p-3 hover:bg-blue-50">
+        <p class="font-semibold text-blue-700 break-words">${n.message}</p>
+        <p class="text-xs text-gray-500">${n.time}</p>
+      </li>`).join("");
+    notifCount.textContent = notifications.length;
+    notifCount.classList.remove("hidden");
+    addHistoryEntry(message);
+  }
+
+  // Chart
+  let ctx = document.getElementById('flowChart').getContext('2d');
+  let history = [], labels = [];
+  let chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Inlet Flow (L/min)', data: history, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.15)', fill: true, tension: 0.4 }] },
+    options: { responsive: true, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+  });
+
+  async function updateData() {
+    try {
+      let res = await fetch('/status-data');
+      let data = await res.json();
+
+      // Battery
+      let batteryPercent = data.battery_percent ?? 0;
+      let bar = document.querySelector("#battery-bar");
+      bar.style.width = batteryPercent + "%";
+      bar.textContent = batteryPercent + "%";
+      bar.className = batteryPercent > 60 ? "bg-green-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all"
+                     : batteryPercent > 30 ? "bg-yellow-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all"
+                     : "bg-red-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all";
+      if (batteryPercent <= 10 && !lowBatteryAlertShown) {
+        lowBatteryAlertShown = true;
+        addNotification("🔋 Low Battery Detected");
+      }
+      if (batteryPercent > 15) lowBatteryAlertShown = false;
+      // ✅ Update battery voltage and current
+        document.getElementById("battery-voltage").textContent = data.battery_voltage + " V";
+        document.getElementById("current-consumed").textContent = data.current_consumed + " A";
+
+      // Flows
+      document.querySelector("#inlet-flow").textContent = data.flow_in + " L/min";
+      document.querySelector("#inlet-volume").textContent = data.volume_in + " L";
+      document.querySelector("#outlet-flow").textContent = data.flow_out + " L/min";
+      document.querySelector("#outlet-volume").textContent = data.volume_out + " L";
+    
+      async function updateConsumption() {
+        try {
+          const res = await fetch('/status-data');
+          const data = await res.json();
+
+          document.getElementById('consumption-day').textContent = data.consumption_day + " L";
+          document.getElementById('consumption-week').textContent = data.consumption_week + " L";
+          document.getElementById('consumption-month').textContent = data.consumption_month + " L";
+        } catch (e) {
+          console.error("Error updating consumption:", e);
+        }
+      }
+
+      // Refresh every 5 seconds
+      setInterval(updateConsumption, 5000);
+      updateConsumption();
+
+      // Pump
+      let pumpStatus = data.pump;
+      let pumpEl = document.querySelector("#pump-status");
+      pumpEl.textContent = pumpStatus;
+      pumpEl.className = pumpStatus === "ON" ? "font-bold text-green-600" : "font-bold text-red-600";
+      if (pumpLastState && pumpLastState !== pumpStatus) {
+        addNotification(`🚰 Pump turned ${pumpStatus}`);
+      }
+      pumpLastState = pumpStatus;
+
+      // Leakage
+      let leakEl = document.querySelector("#leak-status");
+      if (data.leakage) {
+        leakEl.innerHTML = "⚠️ Leakage Detected!";
+        leakEl.className = "text-red-600 font-bold text-lg";
+        if (!leakAlertShown) {
+          addNotification("🚨 Leakage Detected!");
+          leakAlertShown = true;
+        }
+      } else {
+        leakEl.innerHTML = "✅ No Leakage";
+        leakEl.className = "text-green-600 font-bold text-lg";
+        leakAlertShown = false;
+      }
+
+      // Chart update
+      history.push(data.flow_in);
+      labels.push(new Date().toLocaleTimeString());
+      if (history.length > 20) { history.shift(); labels.shift(); }
+      chart.update();
+
+    } catch (err) {
+      console.error("Error fetching:", err);
+    }
+  }
+
+  setInterval(updateData, 1500);
+
+  // Toggle Pump Button
+  document.getElementById("toggle-pump-btn").addEventListener("click", async () => {
+    try {
+      let res = await fetch("/toggle_pump", { method: "POST" });
+      let data = await res.json();
+      let pumpEl = document.querySelector("#pump-status");
+      pumpEl.textContent = data.pump;
+      pumpEl.className = data.pump === "ON" ? "font-bold text-green-600" : "font-bold text-red-600";
+    } catch (err) {
+      alert("⚠️ Failed to toggle pump!");
+    }
+  });
+  </script>
+</body>
+</html>

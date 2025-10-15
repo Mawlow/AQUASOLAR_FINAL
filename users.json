@@ -1,0 +1,30 @@
+{
+  "admin": "1234",
+  "Cj": "12345",
+  "kl": "123",
+  "Vye": "123",
+  "Ven": "12345",
+  "marlo123": "12345",
+  "Mawlow": "123",
+  "marlochinito2004@gmail.com": "12345",
+  "Mawlow@gmail.com": {
+    "password": "123456",
+    "firstname": "Maw",
+    "lastname": "Low"
+  },
+  "ravanesxd@gmail.com": {
+    "password": "123456",
+    "firstname": "Christian",
+    "lastname": "Ravanes"
+  },
+  "kylinediaz@gmail.com": {
+    "password": "123456",
+    "firstname": "Elven",
+    "lastname": "Diaz"
+  },
+  "hellfired23@gmail.com": {
+    "password": "1234",
+    "firstname": "Kamote",
+    "lastname": "Kamote"
+  }
+}

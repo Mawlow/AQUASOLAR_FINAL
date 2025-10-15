@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register - AquaSolar Dashboard</title>
+  <link href="{{ url_for('static', filename='css/tailwind.min.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center min-h-screen px-4">
+
+  <div class="w-full max-w-md">
+    <div class="bg-white/80 backdrop-blur-lg shadow-2xl rounded-3xl p-8 border border-gray-200">
+      
+      <!-- Logo and Title -->
+      <div class="text-center mb-6">
+        <img src="{{ url_for('static', filename='images/AquaSolar.png') }}" alt="Logo"
+             class="mx-auto w-20 h-20 mb-3 rounded-full shadow-md">
+        <h1 class="text-3xl font-extrabold text-blue-700 tracking-tight">Create Account</h1>
+        <p class="text-gray-500 text-sm mt-1">Join AquaSolar and manage your ESP32 Dashboard</p>
+      </div>
+
+      {% if error %}
+        <p class="text-red-600 text-sm text-center bg-red-50 border border-red-200 rounded-lg py-2 mb-4">
+          {{ error }}
+        </p>
+      {% endif %}
+
+      <!-- Registration Form -->
+      <form method="POST" class="space-y-4">
+
+        <!-- Lastname -->
+        <div>
+          <label for="lastname" class="block text-sm font-medium text-gray-700">Lastname</label>
+          <input id="lastname" name="lastname" type="text" required
+            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 text-gray-900 
+                   placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+        </div>
+
+        <!-- Firstname -->
+        <div>
+          <label for="firstname" class="block text-sm font-medium text-gray-700">Firstname</label>
+          <input id="firstname" name="firstname" type="text" required
+            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 text-gray-900 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+          <input id="email" name="email" type="email" required
+            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 text-gray-900 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+          <input id="password" name="password" type="password" required
+            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 text-gray-900 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+        </div>
+
+        <!-- Confirm Password -->
+        <div>
+          <label for="confirm_password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+          <input id="confirm_password" name="confirm_password" type="password" required
+            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 text-gray-900 
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+        </div>
+
+        <!-- Owner Code -->
+        <div>
+          <label for="owner_code" class="block text-sm font-medium text-gray-700">Owner Code</label>
+          <input id="owner_code" name="owner_code" type="text" placeholder="Enter secret code" required
+            class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 text-gray-900 placeholder-gray-400 
+                   focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition">
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl 
+                 shadow-md hover:shadow-lg transition duration-200 ease-in-out transform hover:-translate-y-0.5">
+          Register
+        </button>
+      </form>
+
+      <!-- Login Link -->
+      <p class="mt-6 text-center text-sm text-gray-600">
+        Already have an account?
+        <a href="{{ url_for('login') }}" class="font-semibold text-blue-600 hover:underline">Login</a>
+      </p>
+
+      <!-- Decorative line -->
+      <div class="mt-6 border-t border-gray-200 pt-4 text-center text-xs text-gray-400">
+        © 2025 AquaSolar System. All rights reserved.
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
