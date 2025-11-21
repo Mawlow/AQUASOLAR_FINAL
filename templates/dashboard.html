@@ -11,76 +11,77 @@
 
 <body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen text-gray-800 p-4 sm:p-8">
   <!-- Header -->
-<header class="flex flex-wrap items-center justify-between gap-4 mb-8 px-4 sm:px-0">
-  <!-- Left: Logo + Title -->
-  <div class="flex items-center gap-3 flex-shrink-0 w-full sm:w-auto justify-between sm:justify-start">
-    <div class="flex items-center gap-3">
-      <img src="{{ url_for('static', filename='images/Solar.png') }}" alt="Logo"
-           class="w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-md">
-      <h1 class="text-xl sm:text-3xl font-extrabold text-blue-700 tracking-tight">
-        AquaSolar Dashboard
-      </h1>
-    </div>
-
-    <!-- 🔔 Notification & 📜 History Icons -->
-    <div class="flex items-center gap-2 ml-auto sm:ml-4">
-
-      <!-- Notification -->
-      <div class="relative">
-        <button id="notif-btn"
-          class="relative flex items-center justify-center w-11 h-11 rounded-full bg-white shadow-md hover:bg-blue-50 transition">
-          <i data-lucide="bell" class="w-6 h-6 text-blue-700"></i>
-          <span id="notif-count"
-            class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-full px-1.5 py-0.5 hidden">
-            0
-          </span>
-        </button>
-
-        <!-- Notification Dropdown -->
-        <div id="notif-dropdown"
-          class="hidden absolute right-0 mt-2 w-64 sm:w-72 max-w-[85vw] bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
-          <div class="p-3 border-b font-semibold text-blue-700 text-sm sm:text-base bg-white sticky top-0">
-            🔔 Notifications
-          </div>
-          <ul id="notif-list" class="divide-y text-sm text-gray-700">
-            <li class="p-3 text-center text-gray-500">No notifications</li>
-          </ul>
-        </div>
+  <header class="flex flex-wrap items-center justify-between gap-4 mb-8 px-4 sm:px-0">
+    <!-- Left: Logo + Title -->
+    <div class="flex items-center gap-3 flex-shrink-0 w-full sm:w-auto justify-between sm:justify-start">
+      <div class="flex items-center gap-3">
+        <img src="{{ url_for('static', filename='images/Solar.png') }}" alt="Logo"
+             class="w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-md">
+        <h1 class="text-xl sm:text-3xl font-extrabold text-blue-700 tracking-tight">
+          AquaSolar Dashboard
+        </h1>
       </div>
 
-      <!-- History -->
-      <div class="relative">
-        <button id="history-btn"
-          class="relative flex items-center justify-center w-11 h-11 rounded-full bg-white shadow-md hover:bg-blue-50 transition">
-          <i data-lucide="history" class="w-6 h-6 text-blue-700"></i>
-        </button>
+      <!-- 🔔 Notification & 📜 History Icons -->
+      <div class="flex items-center gap-2 ml-auto sm:ml-4">
 
-        <!-- History Dropdown -->
-        <div id="history-dropdown"
-          class="hidden absolute right-0 mt-2 w-64 sm:w-72 max-w-[85vw] bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
-          <div class="flex items-center justify-between p-3 border-b font-semibold text-blue-700 text-sm sm:text-base bg-white sticky top-0">
-            <span>📜 History</span>
-            <button id="clear-history" class="text-xs text-red-500 hover:text-red-700 font-semibold">Clear</button>
+        <!-- Notification -->
+        <div class="relative">
+          <button id="notif-btn"
+            class="relative flex items-center justify-center w-11 h-11 rounded-full bg-white shadow-md hover:bg-blue-50 transition">
+            <i data-lucide="bell" class="w-6 h-6 text-blue-700"></i>
+            <span id="notif-count"
+              class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-full px-1.5 py-0.5 hidden">
+              0
+            </span>
+          </button>
+
+          <!-- Notification Dropdown -->
+          <div id="notif-dropdown"
+            class="hidden absolute right-0 mt-2 w-64 sm:w-72 max-w-[85vw] bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
+            <div class="flex items-center justify-between p-3 border-b font-semibold text-blue-700 text-sm sm:text-base bg-white sticky top-0">
+              <span>🔔 Notifications</span>
+              <button id="clear-notif" class="text-xs text-red-500 hover:text-red-700 font-semibold">Clear</button>
+            </div>
+            <ul id="notif-list" class="divide-y text-sm text-gray-700 max-h-64 overflow-y-auto">
+              <li class="p-3 text-center text-gray-500">No notifications</li>
+            </ul>
           </div>
-          <ul id="history-list" class="divide-y text-sm text-gray-700">
-            <li class="p-3 text-center text-gray-500">No history yet</li>
-          </ul>
+        </div>
+
+        <!-- History -->
+        <div class="relative">
+          <button id="history-btn"
+            class="relative flex items-center justify-center w-11 h-11 rounded-full bg-white shadow-md hover:bg-blue-50 transition">
+            <i data-lucide="history" class="w-6 h-6 text-blue-700"></i>
+          </button>
+
+          <!-- History Dropdown -->
+          <div id="history-dropdown"
+            class="hidden absolute right-0 mt-2 w-64 sm:w-72 max-w-[85vw] bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
+            <div class="flex items-center justify-between p-3 border-b font-semibold text-blue-700 text-sm sm:text-base bg-white sticky top-0">
+              <span>📜 History</span>
+              <button id="clear-history" class="text-xs text-red-500 hover:text-red-700 font-semibold">Clear</button>
+            </div>
+            <ul id="history-list" class="divide-y text-sm text-gray-700 max-h-64 overflow-y-auto">
+              <li class="p-3 text-center text-gray-500">No history yet</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Right Side: User Info -->
-  <div class="flex flex-col sm:flex-row items-center sm:gap-4 w-full sm:w-auto justify-center sm:justify-end mt-3 sm:mt-0 text-center sm:text-right">
-    <p class="text-gray-700 text-sm">
-      Welcome, <span class="font-semibold text-blue-700">{{ user_name }}</span> 👋
-    </p>
-    <a href="{{ url_for('logout') }}"
-       class="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-xl shadow-md transition duration-200 text-sm sm:text-base mt-1 sm:mt-0">
-      Logout
-    </a>
-  </div>
-</header>
+    <!-- Right Side: User Info -->
+    <div class="flex flex-col sm:flex-row items-center sm:gap-4 w-full sm:w-auto justify-center sm:justify-end mt-3 sm:mt-0 text-center sm:text-right">
+      <p class="text-gray-700 text-sm">
+        Welcome, <span class="font-semibold text-blue-700">{{ user_name }}</span> 👋
+      </p>
+      <a href="{{ url_for('logout') }}"
+         class="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-xl shadow-md transition duration-200 text-sm sm:text-base mt-1 sm:mt-0">
+        Logout
+      </a>
+    </div>
+  </header>
 
   <!-- Dashboard Layout -->
   <main class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -157,40 +158,63 @@
   <script>
   lucide.createIcons();
 
+  // Get all elements
   const notifBtn = document.getElementById("notif-btn");
   const notifDropdown = document.getElementById("notif-dropdown");
   const notifList = document.getElementById("notif-list");
   const notifCount = document.getElementById("notif-count");
-  let notifications = [];
-  let leakAlertShown = false;
-  let lowBatteryAlertShown = false;
-  let pumpLastState = "";
-
-  // Notification Toggle
-  notifBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    notifDropdown.classList.toggle("hidden");
-  });
-  document.addEventListener("click", (e) => {
-    if (!notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) notifDropdown.classList.add("hidden");
-  });
-
-  // --- History Feature ---
+  const clearNotifBtn = document.getElementById("clear-notif");
   const historyBtn = document.getElementById("history-btn");
   const historyDropdown = document.getElementById("history-dropdown");
   const historyList = document.getElementById("history-list");
   const clearHistoryBtn = document.getElementById("clear-history");
+
+  let notifications = [];
+  let leakAlertShown = false;
+  let lowBatteryAlertShown = false;
+  let pumpLastState = "";
   let historyData = JSON.parse(localStorage.getItem("aqua_history") || "[]");
 
-  historyBtn.addEventListener("click", (e) => {
+  // Notification Toggle - closes history and clears red badge when opened
+  notifBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    historyDropdown.classList.toggle("hidden");
-  });
-  document.addEventListener("click", (e) => {
-    if (!historyDropdown.contains(e.target) && !historyBtn.contains(e.target))
-      historyDropdown.classList.add("hidden");
+    historyDropdown.classList.add("hidden");
+    
+    // If opening the dropdown, clear the red badge
+    if (notifDropdown.classList.contains("hidden")) {
+      notifCount.classList.add("hidden");
+      notifCount.textContent = "0";
+    }
+    
+    notifDropdown.classList.toggle("hidden");
   });
 
+  // History Toggle - closes notification when opened
+  historyBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    notifDropdown.classList.add("hidden");
+    historyDropdown.classList.toggle("hidden");
+  });
+
+  // Close both dropdowns when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) {
+      notifDropdown.classList.add("hidden");
+    }
+    if (!historyDropdown.contains(e.target) && !historyBtn.contains(e.target)) {
+      historyDropdown.classList.add("hidden");
+    }
+  });
+
+  // Clear all notifications
+  clearNotifBtn.addEventListener("click", () => {
+    notifications = [];
+    notifList.innerHTML = `<li class="p-3 text-center text-gray-500">No notifications</li>`;
+    notifCount.classList.add("hidden");
+    notifCount.textContent = "0";
+  });
+
+  // History Functions
   function addHistoryEntry(message) {
     const time = new Date().toLocaleTimeString();
     historyData.unshift({ message, time });
@@ -211,6 +235,7 @@
     }
   }
 
+  // Clear all history
   clearHistoryBtn.addEventListener("click", () => {
     historyData = [];
     localStorage.removeItem("aqua_history");
@@ -238,10 +263,25 @@
   let history = [], labels = [];
   let chart = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [{ label: 'Inlet Flow (L/min)', data: history, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.15)', fill: true, tension: 0.4 }] },
-    options: { responsive: true, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+    data: { 
+      labels, 
+      datasets: [{ 
+        label: 'Inlet Flow (L/min)', 
+        data: history, 
+        borderColor: '#2563eb', 
+        backgroundColor: 'rgba(37,99,235,0.15)', 
+        fill: true, 
+        tension: 0.4 
+      }] 
+    },
+    options: { 
+      responsive: true, 
+      scales: { y: { beginAtZero: true } }, 
+      plugins: { legend: { display: false } } 
+    }
   });
 
+  // Update data from server
   async function updateData() {
     try {
       let res = await fetch('/status-data');
@@ -252,40 +292,32 @@
       let bar = document.querySelector("#battery-bar");
       bar.style.width = batteryPercent + "%";
       bar.textContent = batteryPercent + "%";
-      bar.className = batteryPercent > 60 ? "bg-green-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all"
-                     : batteryPercent > 30 ? "bg-yellow-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all"
-                     : "bg-red-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all";
+      bar.className = batteryPercent > 60 
+        ? "bg-green-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all"
+        : batteryPercent > 30 
+        ? "bg-yellow-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all"
+        : "bg-red-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all";
+      
       if (batteryPercent <= 10 && !lowBatteryAlertShown) {
         lowBatteryAlertShown = true;
         addNotification("🔋 Low Battery Detected");
       }
       if (batteryPercent > 15) lowBatteryAlertShown = false;
-      // ✅ Update battery voltage and current
-        document.getElementById("battery-voltage").textContent = data.battery_voltage + " V";
-        document.getElementById("current-consumed").textContent = data.current_consumed + " A";
+
+      // Update battery voltage and current
+      document.getElementById("battery-voltage").textContent = data.battery_voltage + " V";
+      document.getElementById("current-consumed").textContent = data.current_consumed + " A";
 
       // Flows
       document.querySelector("#inlet-flow").textContent = data.flow_in + " L/min";
       document.querySelector("#inlet-volume").textContent = data.volume_in + " L";
       document.querySelector("#outlet-flow").textContent = data.flow_out + " L/min";
       document.querySelector("#outlet-volume").textContent = data.volume_out + " L";
-    
-      async function updateConsumption() {
-        try {
-          const res = await fetch('/status-data');
-          const data = await res.json();
 
-          document.getElementById('consumption-day').textContent = data.consumption_day + " L";
-          document.getElementById('consumption-week').textContent = data.consumption_week + " L";
-          document.getElementById('consumption-month').textContent = data.consumption_month + " L";
-        } catch (e) {
-          console.error("Error updating consumption:", e);
-        }
-      }
-
-      // Refresh every 5 seconds
-      setInterval(updateConsumption, 5000);
-      updateConsumption();
+      // Consumption
+      document.getElementById('consumption-day').textContent = data.consumption_day + " L";
+      document.getElementById('consumption-week').textContent = data.consumption_week + " L";
+      document.getElementById('consumption-month').textContent = data.consumption_month + " L";
 
       // Pump
       let pumpStatus = data.pump;

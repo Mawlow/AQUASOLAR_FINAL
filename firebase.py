@@ -4,7 +4,7 @@ from datetime import datetime, date
 import uuid
 
 # --- CONFIGURATION: Replace with your actual service account key file ---
-SERVICE_ACCOUNT_KEY_PATH = 'aquasolar-10c88-firebase-adminsdk-fbsvc-650df625a1.json'
+SERVICE_ACCOUNT_KEY_PATH = 'aqua-7ced9-firebase-adminsdk-fbsvc-d94e9eb953.json'
 # --- END CONFIGURATION ---
 
 try:
