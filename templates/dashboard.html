@@ -7,167 +7,440 @@
   <link href="{{ url_for('static', filename='css/tailwind.min.css') }}" rel="stylesheet">
   <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', system-ui, sans-serif; }
+    
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes countUp {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    .animate-fade-in { animation: fadeIn 0.2s ease-out; }
+    .animate-slide-up { animation: slideUp 0.4s ease-out; }
+    .animate-count { animation: countUp 0.3s ease-out; }
+    .pulse-glow { animation: pulse-glow 2s infinite; }
+    
+    .card-interactive {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card-interactive:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .card-interactive:active {
+      transform: translateY(-2px);
+    }
+
+    .btn-press {
+      transition: all 0.15s ease;
+    }
+    .btn-press:active {
+      transform: scale(0.97);
+    }
+
+    @media (hover: none) {
+      .card-interactive:active {
+        transform: scale(0.98);
+        background-color: #f9fafb;
+      }
+    }
+
+    .value-update {
+      transition: all 0.3s ease;
+    }
+    .value-flash {
+      animation: countUp 0.3s ease-out;
+    }
+  </style>
 </head>
 
-<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen text-gray-800 p-4 sm:p-8">
+<body class="bg-gray-50 min-h-screen">
+  <!-- Mobile Menu Overlay -->
+  <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden" onclick="closeMobileMenu()"></div>
+
   <!-- Header -->
-  <header class="flex flex-wrap items-center justify-between gap-4 mb-8 px-4 sm:px-0">
-    <!-- Left: Logo + Title -->
-    <div class="flex items-center gap-3 flex-shrink-0 w-full sm:w-auto justify-between sm:justify-start">
-      <div class="flex items-center gap-3">
-        <img src="{{ url_for('static', filename='images/Solar.png') }}" alt="Logo"
-             class="w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-md">
-        <h1 class="text-xl sm:text-3xl font-extrabold text-blue-700 tracking-tight">
-          AquaSolar Dashboard
-        </h1>
-      </div>
+  <header class="sticky top-0 z-30 bg-white bg-opacity-80 backdrop-blur-lg border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20">
+        <!-- Logo -->
+        <div class="flex items-center gap-3">
+          <img src="{{ url_for('static', filename='images/Solar.png') }}" alt="Logo"
+               class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl shadow-sm">
+          <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">
+            AquaSolar
+          </h1>
+        </div>
 
-      <!-- 🔔 Notification & 📜 History Icons -->
-      <div class="flex items-center gap-2 ml-auto sm:ml-4">
+        <!-- Desktop Actions -->
+        <div class="hidden sm:flex items-center gap-3">
+          <!-- Notification -->
+          <div class="relative">
+            <button id="notif-btn" 
+                    class="relative p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 btn-press">
+              <i data-lucide="bell" class="w-5 h-5 text-gray-700"></i>
+              <span id="notif-count" 
+                    class="absolute -top-1 -right-1 min-w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1 hidden">
+                0
+              </span>
+            </button>
+            <div id="notif-dropdown" 
+                 class="hidden absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-in">
+              <div class="p-4 border-b border-gray-100 bg-gray-50 bg-opacity-50 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-900">Notifications</h3>
+                <button id="clear-notif" class="text-xs text-red-500 hover:text-red-700 font-medium transition-colors">Clear all</button>
+              </div>
+              <ul id="notif-list" class="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                <li class="p-4 text-center text-gray-400 text-sm">No notifications</li>
+              </ul>
+            </div>
+          </div>
 
-        <!-- Notification -->
-        <div class="relative">
-          <button id="notif-btn"
-            class="relative flex items-center justify-center w-11 h-11 rounded-full bg-white shadow-md hover:bg-blue-50 transition">
-            <i data-lucide="bell" class="w-6 h-6 text-blue-700"></i>
-            <span id="notif-count"
-              class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] sm:text-xs font-bold rounded-full px-1.5 py-0.5 hidden">
+          <!-- History -->
+          <div class="relative">
+            <button id="history-btn" 
+                    class="relative p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 btn-press">
+              <i data-lucide="clock" class="w-5 h-5 text-gray-700"></i>
+            </button>
+            <div id="history-dropdown" 
+                 class="hidden absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-in">
+              <div class="p-4 border-b border-gray-100 bg-gray-50 bg-opacity-50 flex items-center justify-between">
+                <h3 class="font-semibold text-gray-900">History</h3>
+                <button id="clear-history" class="text-xs text-red-500 hover:text-red-700 font-medium transition-colors">Clear all</button>
+              </div>
+              <ul id="history-list" class="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                <li class="p-4 text-center text-gray-400 text-sm">No history yet</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div class="w-px h-8 bg-gray-200 mx-2"></div>
+
+          <!-- User -->
+          <div class="flex items-center gap-3">
+            <div class="text-right hidden md:block">
+              <p class="text-sm text-gray-500">Welcome back</p>
+              <p class="text-sm font-semibold text-gray-900">{{ user_name }}</p>
+            </div>
+            <a href="{{ url_for('logout') }}" 
+               class="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition-all duration-200 btn-press">
+              Logout
+            </a>
+          </div>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <div class="flex items-center gap-2 sm:hidden">
+          <button id="mobile-notif-btn" class="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <i data-lucide="bell" class="w-5 h-5 text-gray-700"></i>
+            <span id="mobile-notif-count" 
+                  class="absolute -top-0 -right-0 min-w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1 hidden">
               0
             </span>
           </button>
-
-          <!-- Notification Dropdown -->
-          <div id="notif-dropdown"
-            class="hidden absolute right-0 mt-2 w-64 sm:w-72 max-w-[85vw] bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
-            <div class="flex items-center justify-between p-3 border-b font-semibold text-blue-700 text-sm sm:text-base bg-white sticky top-0">
-              <span>🔔 Notifications</span>
-              <button id="clear-notif" class="text-xs text-red-500 hover:text-red-700 font-semibold">Clear</button>
-            </div>
-            <ul id="notif-list" class="divide-y text-sm text-gray-700 max-h-64 overflow-y-auto">
-              <li class="p-3 text-center text-gray-500">No notifications</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- History -->
-        <div class="relative">
-          <button id="history-btn"
-            class="relative flex items-center justify-center w-11 h-11 rounded-full bg-white shadow-md hover:bg-blue-50 transition">
-            <i data-lucide="history" class="w-6 h-6 text-blue-700"></i>
+          <button id="mobile-menu-btn" class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <i data-lucide="menu" class="w-5 h-5 text-gray-700"></i>
           </button>
-
-          <!-- History Dropdown -->
-          <div id="history-dropdown"
-            class="hidden absolute right-0 mt-2 w-64 sm:w-72 max-w-[85vw] bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
-            <div class="flex items-center justify-between p-3 border-b font-semibold text-blue-700 text-sm sm:text-base bg-white sticky top-0">
-              <span>📜 History</span>
-              <button id="clear-history" class="text-xs text-red-500 hover:text-red-700 font-semibold">Clear</button>
-            </div>
-            <ul id="history-list" class="divide-y text-sm text-gray-700 max-h-64 overflow-y-auto">
-              <li class="p-3 text-center text-gray-500">No history yet</li>
-            </ul>
-          </div>
         </div>
       </div>
-    </div>
-
-    <!-- Right Side: User Info -->
-    <div class="flex flex-col sm:flex-row items-center sm:gap-4 w-full sm:w-auto justify-center sm:justify-end mt-3 sm:mt-0 text-center sm:text-right">
-      <p class="text-gray-700 text-sm">
-        Welcome, <span class="font-semibold text-blue-700">{{ user_name }}</span> 👋
-      </p>
-      <a href="{{ url_for('logout') }}"
-         class="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-xl shadow-md transition duration-200 text-sm sm:text-base mt-1 sm:mt-0">
-        Logout
-      </a>
     </div>
   </header>
 
-  <!-- Dashboard Layout -->
-  <main class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-
-    <!-- Pump Control -->
-    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 hover:shadow-xl transition">
-      <h2 class="text-xl font-semibold text-blue-700 mb-3 flex items-center gap-2">🚰 Pump Control</h2>
-      <p class="mb-4 text-gray-700">Status:
-        <span id="pump-status" class="font-bold text-red-600">{{ status.pump }}</span>
-      </p>
-      <button id="toggle-pump-btn"
-              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl shadow-md transition">
-        Toggle Pump
+  <!-- Mobile Slide Menu -->
+  <div id="mobile-menu" 
+       class="fixed top-0 right-0 h-full w-72 bg-white shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-out lg:hidden">
+    <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+      <h2 class="font-semibold text-gray-900">Menu</h2>
+      <button onclick="closeMobileMenu()" class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+        <i data-lucide="x" class="w-5 h-5 text-gray-700"></i>
       </button>
-    </section>
-
-    <!-- Water Consumption -->
-    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 hover:shadow-xl transition">
-      <h2 class="text-xl font-semibold text-blue-700 mb-3">💧 Water Consumption</h2>
-      <div class="space-y-2 text-gray-700">
-        <p>Today: <span id="consumption-day" class="font-bold text-green-600">{{ status.consumption_day }} L</span></p>
-        <p>This Week: <span id="consumption-week" class="font-bold text-yellow-600">{{ status.consumption_week }} L</span></p>
-        <p>This Month: <span id="consumption-month" class="font-bold text-red-600">{{ status.consumption_month }} L</span></p>
+    </div>
+    <div class="p-4 space-y-4">
+      <div class="p-4 bg-gray-50 rounded-xl">
+        <p class="text-sm text-gray-500">Logged in as</p>
+        <p class="font-semibold text-gray-900">{{ user_name }}</p>
       </div>
-    </section>
+      <button onclick="openMobileNotifications()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+        <i data-lucide="bell" class="w-5 h-5 text-gray-600"></i>
+        <span class="text-gray-700">Notifications</span>
+      </button>
+      <button onclick="openMobileHistory()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+        <i data-lucide="clock" class="w-5 h-5 text-gray-600"></i>
+        <span class="text-gray-700">History</span>
+      </button>
+      <a href="{{ url_for('logout') }}" 
+         class="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition-colors">
+        <i data-lucide="log-out" class="w-5 h-5"></i>
+        <span class="font-medium">Logout</span>
+      </a>
+    </div>
+  </div>
 
-    <!-- Inlet Flow -->
-    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 hover:shadow-xl transition">
-      <h2 class="text-xl font-semibold text-blue-700 mb-3">⬅️ Inlet Flow</h2>
-      <p class="mb-2 text-gray-700">Flow Rate: <span id="inlet-flow" class="font-bold text-blue-600">{{ status.flow_in }} L/min</span></p>
-      <p>Total Volume: <span id="inlet-volume" class="font-bold text-purple-600">{{ status.volume_in }} L</span></p>
-    </section>
+  <!-- Mobile Bottom Sheet for Notifications -->
+  <div id="mobile-notif-sheet" 
+       class="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl shadow-2xl z-50 transform translate-y-full transition-transform duration-300 ease-out lg:hidden" style="max-height: 70vh;">
+    <div class="p-4 border-b border-gray-100">
+      <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold text-gray-900">Notifications</h3>
+        <button id="mobile-clear-notif" class="text-xs text-red-500 font-medium">Clear all</button>
+      </div>
+    </div>
+    <ul id="mobile-notif-list" class="overflow-y-auto divide-y divide-gray-100" style="max-height: 50vh;">
+      <li class="p-4 text-center text-gray-400 text-sm">No notifications</li>
+    </ul>
+  </div>
 
-    <!-- Outlet Flow -->
-    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 hover:shadow-xl transition">
-      <h2 class="text-xl font-semibold text-blue-700 mb-3">➡️ Outlet Flow</h2>
-      <p class="mb-2 text-gray-700">Flow Rate: <span id="outlet-flow" class="font-bold text-blue-600">{{ status.flow_out }} L/min</span></p>
-      <p>Total Volume: <span id="outlet-volume" class="font-bold text-purple-600">{{ status.volume_out }} L</span></p>
-    </section>
+  <!-- Mobile Bottom Sheet for History -->
+  <div id="mobile-history-sheet" 
+       class="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl shadow-2xl z-50 transform translate-y-full transition-transform duration-300 ease-out lg:hidden" style="max-height: 70vh;">
+    <div class="p-4 border-b border-gray-100">
+      <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold text-gray-900">History</h3>
+        <button id="mobile-clear-history" class="text-xs text-red-500 font-medium">Clear all</button>
+      </div>
+    </div>
+    <ul id="mobile-history-list" class="overflow-y-auto divide-y divide-gray-100" style="max-height: 50vh;">
+      <li class="p-4 text-center text-gray-400 text-sm">No history yet</li>
+    </ul>
+  </div>
 
-    <!-- Leakage -->
-    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 hover:shadow-xl transition">
-      <h2 class="text-xl font-semibold text-blue-700 mb-3">🚨 Leakage Detection</h2>
-      <p id="leak-status" class="text-green-600 font-bold text-lg">
-        {% if status.leakage %} ⚠️ Leakage Detected! {% else %} ✅ No Leakage {% endif %}
-      </p>
-    </section>
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+      
+      <!-- Pump Control -->
+      <div class="col-span-2 sm:col-span-1 bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6 card-interactive">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+            <i data-lucide="power" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700"></i>
+          </div>
+          <div>
+            <h2 class="text-sm sm:text-base font-semibold text-gray-900">Pump Control</h2>
+            <div class="flex items-center gap-2 mt-0">
+              <span id="pump-dot" class="w-2 h-2 rounded-full bg-red-500 transition-all duration-300"></span>
+              <span id="pump-status" class="text-xs sm:text-sm text-gray-500 font-medium">{{ status.pump }}</span>
+            </div>
+          </div>
+        </div>
+        <button id="toggle-pump-btn" 
+                class="w-full py-3 sm:py-3 bg-gray-900 hover:bg-gray-800 active:bg-gray-700 text-white font-semibold rounded-xl transition-all duration-200 btn-press text-sm sm:text-base">
+          Toggle Pump
+        </button>
+      </div>
 
-    <!-- Battery -->
-    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 hover:shadow-xl transition md:col-span-2 lg:col-span-3">
-      <h2 class="text-xl font-semibold text-blue-700 mb-4">🔋 Battery Status</h2>
-      <div class="w-full bg-gray-200 rounded-full h-6 mb-3 overflow-hidden">
-        <div id="battery-bar"
-             class="bg-green-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all duration-500"
-             style="width: 80%;">
-          80%
+      <!-- Water Today -->
+      <div class="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6 card-interactive">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+            <i data-lucide="droplet" class="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600"></i>
+          </div>
+          <span class="text-xs sm:text-sm text-gray-500 font-medium">Today</span>
+        </div>
+        <p id="consumption-day" class="text-2xl sm:text-3xl font-bold text-gray-900 value-update">{{ status.consumption_day }}<span class="text-base sm:text-lg text-gray-400 font-medium ml-1">L</span></p>
+      </div>
+
+      <!-- Water Week -->
+      <div class="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6 card-interactive">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+            <i data-lucide="droplets" class="w-4 h-4 sm:w-5 sm:h-5 text-amber-600"></i>
+          </div>
+          <span class="text-xs sm:text-sm text-gray-500 font-medium">This Week</span>
+        </div>
+        <p id="consumption-week" class="text-2xl sm:text-3xl font-bold text-gray-900 value-update">{{ status.consumption_week }}<span class="text-base sm:text-lg text-gray-400 font-medium ml-1">L</span></p>
+      </div>
+
+      <!-- Water Month -->
+      <div class="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6 card-interactive">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-rose-50 flex items-center justify-center">
+            <i data-lucide="gauge" class="w-4 h-4 sm:w-5 sm:h-5 text-rose-600"></i>
+          </div>
+          <span class="text-xs sm:text-sm text-gray-500 font-medium">This Month</span>
+        </div>
+        <p id="consumption-month" class="text-2xl sm:text-3xl font-bold text-gray-900 value-update">{{ status.consumption_month }}<span class="text-base sm:text-lg text-gray-400 font-medium ml-1">L</span></p>
+      </div>
+    </div>
+
+    <!-- Flow & Leakage Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+      
+      <!-- Inlet Flow -->
+      <div class="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6 card-interactive">
+        <div class="flex items-center gap-3 mb-4 sm:mb-6">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+            <i data-lucide="arrow-down-to-line" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700"></i>
+          </div>
+          <h2 class="text-sm sm:text-base font-semibold text-gray-900">Inlet Flow</h2>
+        </div>
+        <div class="space-y-4">
+          <div class="flex items-end justify-between">
+            <span class="text-xs sm:text-sm text-gray-500">Flow Rate</span>
+            <p class="text-xl sm:text-2xl font-bold text-gray-900 value-update">
+              <span id="inlet-flow">{{ status.flow_in }}</span>
+              <span class="text-sm text-gray-400 font-medium ml-1">L/min</span>
+            </p>
+          </div>
+          <div class="h-px bg-gray-100"></div>
+          <div class="flex items-end justify-between">
+            <span class="text-xs sm:text-sm text-gray-500">Total Volume</span>
+            <p class="text-xl sm:text-2xl font-bold text-gray-900 value-update">
+              <span id="inlet-volume">{{ status.volume_in }}</span>
+              <span class="text-sm text-gray-400 font-medium ml-1">L</span>
+            </p>
+          </div>
         </div>
       </div>
-      <div class="flex flex-wrap gap-6 text-gray-700">
-        <p>Voltage: <span id="battery-voltage" class="font-bold text-blue-600">{{ status.battery_voltage }} V</span></p>
-        <p>Current: <span id="current-consumed" class="font-bold text-purple-600">{{ status.current_consumed }} A</span></p>
+
+      <!-- Outlet Flow -->
+      <div class="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6 card-interactive">
+        <div class="flex items-center gap-3 mb-4 sm:mb-6">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+            <i data-lucide="arrow-up-from-line" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700"></i>
+          </div>
+          <h2 class="text-sm sm:text-base font-semibold text-gray-900">Outlet Flow</h2>
+        </div>
+        <div class="space-y-4">
+          <div class="flex items-end justify-between">
+            <span class="text-xs sm:text-sm text-gray-500">Flow Rate</span>
+            <p class="text-xl sm:text-2xl font-bold text-gray-900 value-update">
+              <span id="outlet-flow">{{ status.flow_out }}</span>
+              <span class="text-sm text-gray-400 font-medium ml-1">L/min</span>
+            </p>
+          </div>
+          <div class="h-px bg-gray-100"></div>
+          <div class="flex items-end justify-between">
+            <span class="text-xs sm:text-sm text-gray-500">Total Volume</span>
+            <p class="text-xl sm:text-2xl font-bold text-gray-900 value-update">
+              <span id="outlet-volume">{{ status.volume_out }}</span>
+              <span class="text-sm text-gray-400 font-medium ml-1">L</span>
+            </p>
+          </div>
+        </div>
       </div>
-    </section>
 
-    <!-- Chart -->
-    <section class="bg-white/80 border rounded-3xl shadow-lg p-6 md:col-span-2 lg:col-span-3 hover:shadow-xl transition">
-      <h2 class="text-xl font-semibold text-blue-700 mb-3">📈 Inlet Flow History</h2>
-      <canvas id="flowChart" class="w-full h-64"></canvas>
-    </section>
+      <!-- Leakage Detection -->
+      <div class="sm:col-span-2 lg:col-span-1 bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6 card-interactive">
+        <div class="flex items-center gap-3 mb-4 sm:mb-6">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+            <i data-lucide="shield-check" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700"></i>
+          </div>
+          <h2 class="text-sm sm:text-base font-semibold text-gray-900">Leakage Detection</h2>
+        </div>
+        <div id="leak-status" class="flex items-center gap-4 p-4 rounded-xl bg-emerald-50 transition-all duration-300">
+          <div class="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="check" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <p class="font-semibold text-emerald-700 text-sm sm:text-base">System Normal</p>
+            <p class="text-xs sm:text-sm text-emerald-600">No leakage detected</p>
+          </div>
+        </div>
+      </div>
+    </div>
 
+    <!-- Battery & Chart Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+      
+      <!-- Battery Status -->
+      <div class="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6 card-interactive">
+        <div class="flex items-center gap-3 mb-4 sm:mb-6">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+            <i data-lucide="battery-charging" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700"></i>
+          </div>
+          <h2 class="text-sm sm:text-base font-semibold text-gray-900">Battery Status</h2>
+        </div>
+        
+        <div class="text-center mb-6">
+          <p id="battery-percent" class="text-4xl sm:text-5xl font-bold text-gray-900 value-update">80<span class="text-xl sm:text-2xl text-gray-400">%</span></p>
+        </div>
+        
+        <div class="h-3 bg-gray-100 rounded-full overflow-hidden mb-6">
+          <div id="battery-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 80%;"></div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div class="text-center p-3 bg-gray-50 rounded-xl">
+            <p class="text-xs text-gray-500 mb-1">Voltage</p>
+            <p id="battery-voltage" class="text-lg sm:text-xl font-bold text-gray-900 value-update">{{ status.battery_voltage }} V</p>
+          </div>
+          <div class="text-center p-3 bg-gray-50 rounded-xl">
+            <p class="text-xs text-gray-500 mb-1">Current</p>
+            <p id="current-consumed" class="text-lg sm:text-xl font-bold text-gray-900 value-update">{{ status.current_consumed }} A</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flow Chart -->
+      <div class="lg:col-span-2 bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6 card-interactive">
+        <div class="flex items-center gap-3 mb-4 sm:mb-6">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+            <i data-lucide="trending-up" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700"></i>
+          </div>
+          <h2 class="text-sm sm:text-base font-semibold text-gray-900">Inlet Flow History</h2>
+        </div>
+        <div class="h-48 sm:h-64 lg:h-72">
+          <canvas id="flowChart"></canvas>
+        </div>
+      </div>
+    </div>
   </main>
 
-  <!-- JS -->
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-4 sm:bottom-4 bg-gray-900 text-white px-4 sm:px-6 py-3 rounded-xl shadow-lg translate-y-20 opacity-0 transition-all duration-300 z-50" style="max-width: 90vw;">
+    <div class="flex items-center gap-3">
+      <i data-lucide="bell" class="w-5 h-5 flex-shrink-0"></i>
+      <span id="toast-message" class="text-sm font-medium"></span>
+    </div>
+  </div>
+
   <script>
   lucide.createIcons();
 
-  // Get all elements
+  // Elements
   const notifBtn = document.getElementById("notif-btn");
   const notifDropdown = document.getElementById("notif-dropdown");
   const notifList = document.getElementById("notif-list");
   const notifCount = document.getElementById("notif-count");
+  const mobileNotifCount = document.getElementById("mobile-notif-count");
   const clearNotifBtn = document.getElementById("clear-notif");
+  const mobileClearNotif = document.getElementById("mobile-clear-notif");
   const historyBtn = document.getElementById("history-btn");
   const historyDropdown = document.getElementById("history-dropdown");
   const historyList = document.getElementById("history-list");
   const clearHistoryBtn = document.getElementById("clear-history");
+  const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+  const mobileMenu = document.getElementById("mobile-menu");
+  const mobileOverlay = document.getElementById("mobile-overlay");
+  const mobileNotifBtn = document.getElementById("mobile-notif-btn");
+  const mobileNotifSheet = document.getElementById("mobile-notif-sheet");
+  const mobileNotifList = document.getElementById("mobile-notif-list");
+  const mobileHistorySheet = document.getElementById("mobile-history-sheet");
+  const mobileHistoryList = document.getElementById("mobile-history-list");
+  const mobileClearHistory = document.getElementById("mobile-clear-history");
+  const toast = document.getElementById("toast");
+  const toastMessage = document.getElementById("toast-message");
 
   let notifications = [];
   let leakAlertShown = false;
@@ -175,44 +448,94 @@
   let pumpLastState = "";
   let historyData = JSON.parse(localStorage.getItem("aqua_history") || "[]");
 
-  // Notification Toggle - closes history and clears red badge when opened
-  notifBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    historyDropdown.classList.add("hidden");
-    
-    // If opening the dropdown, clear the red badge
-    if (notifDropdown.classList.contains("hidden")) {
-      notifCount.classList.add("hidden");
-      notifCount.textContent = "0";
-    }
-    
-    notifDropdown.classList.toggle("hidden");
+  // Mobile Menu Functions
+  function openMobileMenu() {
+    mobileMenu.classList.remove("translate-x-full");
+    mobileOverlay.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeMobileMenu() {
+    mobileMenu.classList.add("translate-x-full");
+    mobileOverlay.classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+
+  function openMobileNotifications() {
+    closeMobileMenu();
+    mobileNotifSheet.classList.remove("translate-y-full");
+    mobileOverlay.classList.remove("hidden");
+    mobileNotifCount.classList.add("hidden");
+    notifCount.classList.add("hidden");
+  }
+
+  function openMobileHistory() {
+    closeMobileMenu();
+    mobileHistorySheet.classList.remove("translate-y-full");
+    mobileOverlay.classList.remove("hidden");
+  }
+
+  function closeBottomSheets() {
+    mobileNotifSheet.classList.add("translate-y-full");
+    mobileHistorySheet.classList.add("translate-y-full");
+    mobileOverlay.classList.add("hidden");
+  }
+
+  mobileMenuBtn?.addEventListener("click", openMobileMenu);
+  mobileNotifBtn?.addEventListener("click", () => {
+    openMobileNotifications();
+  });
+  mobileOverlay?.addEventListener("click", () => {
+    closeMobileMenu();
+    closeBottomSheets();
   });
 
-  // History Toggle - closes notification when opened
-  historyBtn.addEventListener("click", (e) => {
+  // Desktop Dropdowns
+  notifBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    historyDropdown.classList.add("hidden");
+    notifDropdown.classList.toggle("hidden");
+    if (!notifDropdown.classList.contains("hidden")) {
+      notifCount.classList.add("hidden");
+    }
+  });
+
+  historyBtn?.addEventListener("click", (e) => {
     e.stopPropagation();
     notifDropdown.classList.add("hidden");
     historyDropdown.classList.toggle("hidden");
   });
 
-  // Close both dropdowns when clicking outside
   document.addEventListener("click", (e) => {
-    if (!notifDropdown.contains(e.target) && !notifBtn.contains(e.target)) {
-      notifDropdown.classList.add("hidden");
+    if (!notifDropdown?.contains(e.target) && !notifBtn?.contains(e.target)) {
+      notifDropdown?.classList.add("hidden");
     }
-    if (!historyDropdown.contains(e.target) && !historyBtn.contains(e.target)) {
-      historyDropdown.classList.add("hidden");
+    if (!historyDropdown?.contains(e.target) && !historyBtn?.contains(e.target)) {
+      historyDropdown?.classList.add("hidden");
     }
   });
 
-  // Clear all notifications
-  clearNotifBtn.addEventListener("click", () => {
+  // Clear notifications
+  function clearNotifications() {
     notifications = [];
-    notifList.innerHTML = `<li class="p-3 text-center text-gray-500">No notifications</li>`;
+    const emptyHtml = '<li class="p-4 text-center text-gray-400 text-sm">No notifications</li>';
+    notifList.innerHTML = emptyHtml;
+    mobileNotifList.innerHTML = emptyHtml;
     notifCount.classList.add("hidden");
-    notifCount.textContent = "0";
-  });
+    mobileNotifCount.classList.add("hidden");
+  }
+  
+  clearNotifBtn?.addEventListener("click", clearNotifications);
+  mobileClearNotif?.addEventListener("click", clearNotifications);
+
+  // Toast Notification
+  function showToast(message) {
+    toastMessage.textContent = message;
+    toast.classList.remove("translate-y-20", "opacity-0");
+    setTimeout(() => {
+      toast.classList.add("translate-y-20", "opacity-0");
+    }, 3000);
+  }
 
   // History Functions
   function addHistoryEntry(message) {
@@ -224,131 +547,197 @@
   }
 
   function renderHistory() {
-    if (historyData.length === 0) {
-      historyList.innerHTML = `<li class="p-3 text-center text-gray-500">No history yet</li>`;
-    } else {
-      historyList.innerHTML = historyData.map(h => `
-        <li class="p-3 hover:bg-blue-50">
-          <p class="font-semibold text-blue-700 break-words">${h.message}</p>
-          <p class="text-xs text-gray-500">${h.time}</p>
-        </li>`).join("");
-    }
+    const html = historyData.length === 0 
+      ? '<li class="p-4 text-center text-gray-400 text-sm">No history yet</li>'
+      : historyData.map(h => `
+          <li class="p-4 hover:bg-gray-50 transition-colors">
+            <p class="text-sm font-medium text-gray-900">${h.message}</p>
+            <p class="text-xs text-gray-400 mt-1">${h.time}</p>
+          </li>`).join("");
+    
+    historyList.innerHTML = html;
+    mobileHistoryList.innerHTML = html;
   }
 
-  // Clear all history
-  clearHistoryBtn.addEventListener("click", () => {
+  function clearAllHistory() {
     historyData = [];
     localStorage.removeItem("aqua_history");
     renderHistory();
-  });
+  }
+
+  clearHistoryBtn?.addEventListener("click", clearAllHistory);
+  mobileClearHistory?.addEventListener("click", clearAllHistory);
 
   renderHistory();
 
-  // Add notification + history integration
+  // Notifications
   function addNotification(message) {
     const time = new Date().toLocaleTimeString();
     notifications.unshift({ message, time });
-    notifList.innerHTML = notifications.map(n => `
-      <li class="p-3 hover:bg-blue-50">
-        <p class="font-semibold text-blue-700 break-words">${n.message}</p>
-        <p class="text-xs text-gray-500">${n.time}</p>
+    
+    const html = notifications.map(n => `
+      <li class="p-4 hover:bg-gray-50 transition-colors">
+        <p class="text-sm font-medium text-gray-900">${n.message}</p>
+        <p class="text-xs text-gray-400 mt-1">${n.time}</p>
       </li>`).join("");
+    
+    notifList.innerHTML = html;
+    mobileNotifList.innerHTML = html;
+    
     notifCount.textContent = notifications.length;
+    mobileNotifCount.textContent = notifications.length;
     notifCount.classList.remove("hidden");
+    mobileNotifCount.classList.remove("hidden");
+    
     addHistoryEntry(message);
+    showToast(message);
   }
 
   // Chart
-  let ctx = document.getElementById('flowChart').getContext('2d');
+  const ctx = document.getElementById('flowChart').getContext('2d');
   let history = [], labels = [];
-  let chart = new Chart(ctx, {
+  const chart = new Chart(ctx, {
     type: 'line',
-    data: { 
-      labels, 
-      datasets: [{ 
-        label: 'Inlet Flow (L/min)', 
-        data: history, 
-        borderColor: '#2563eb', 
-        backgroundColor: 'rgba(37,99,235,0.15)', 
-        fill: true, 
-        tension: 0.4 
-      }] 
+    data: {
+      labels,
+      datasets: [{
+        label: 'Inlet Flow (L/min)',
+        data: history,
+        borderColor: '#1f2937',
+        backgroundColor: 'rgba(31, 41, 55, 0.05)',
+        fill: true,
+        tension: 0.4,
+        borderWidth: 2,
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: '#1f2937',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2
+      }]
     },
-    options: { 
-      responsive: true, 
-      scales: { y: { beginAtZero: true } }, 
-      plugins: { legend: { display: false } } 
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: '#f3f4f6', drawBorder: false },
+          ticks: { color: '#9ca3af', font: { size: 11 } }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#9ca3af', font: { size: 11 }, maxTicksLimit: 8 }
+        }
+      },
+      plugins: { legend: { display: false } },
+      interaction: { intersect: false, mode: 'index' }
     }
   });
 
-  // Update data from server
+  // Update data
   async function updateData() {
     try {
-      let res = await fetch('/status-data');
-      let data = await res.json();
+      const res = await fetch('/status-data');
+      const data = await res.json();
 
       // Battery
-      let batteryPercent = data.battery_percent ?? 0;
-      let bar = document.querySelector("#battery-bar");
-      bar.style.width = batteryPercent + "%";
-      bar.textContent = batteryPercent + "%";
-      bar.className = batteryPercent > 60 
-        ? "bg-green-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all"
-        : batteryPercent > 30 
-        ? "bg-yellow-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all"
-        : "bg-red-500 h-6 rounded-full text-center text-xs font-bold text-white leading-6 transition-all";
+      const batteryPercent = data.battery_percent ?? 0;
+      const bar = document.getElementById("battery-bar");
+      const percentDisplay = document.getElementById("battery-percent");
       
+      bar.style.width = batteryPercent + "%";
+      percentDisplay.innerHTML = batteryPercent + '<span class="text-xl sm:text-2xl text-gray-400">%</span>';
+      
+      bar.classList.remove("bg-emerald-500", "bg-amber-500", "bg-red-500");
+      if (batteryPercent <= 30) {
+        bar.classList.add("bg-red-500");
+      } else if (batteryPercent <= 60) {
+        bar.classList.add("bg-amber-500");
+      } else {
+        bar.classList.add("bg-emerald-500");
+      }
+
       if (batteryPercent <= 10 && !lowBatteryAlertShown) {
         lowBatteryAlertShown = true;
-        addNotification("🔋 Low Battery Detected");
+        addNotification("Low Battery Detected");
       }
       if (batteryPercent > 15) lowBatteryAlertShown = false;
 
-      // Update battery voltage and current
       document.getElementById("battery-voltage").textContent = data.battery_voltage + " V";
       document.getElementById("current-consumed").textContent = data.current_consumed + " A";
 
       // Flows
-      document.querySelector("#inlet-flow").textContent = data.flow_in + " L/min";
-      document.querySelector("#inlet-volume").textContent = data.volume_in + " L";
-      document.querySelector("#outlet-flow").textContent = data.flow_out + " L/min";
-      document.querySelector("#outlet-volume").textContent = data.volume_out + " L";
+      document.getElementById("inlet-flow").textContent = data.flow_in;
+      document.getElementById("inlet-volume").textContent = data.volume_in;
+      document.getElementById("outlet-flow").textContent = data.flow_out;
+      document.getElementById("outlet-volume").textContent = data.volume_out;
 
       // Consumption
-      document.getElementById('consumption-day').textContent = data.consumption_day + " L";
-      document.getElementById('consumption-week').textContent = data.consumption_week + " L";
-      document.getElementById('consumption-month').textContent = data.consumption_month + " L";
+      const dayEl = document.getElementById('consumption-day');
+      const weekEl = document.getElementById('consumption-week');
+      const monthEl = document.getElementById('consumption-month');
+      
+      dayEl.innerHTML = data.consumption_day + '<span class="text-base sm:text-lg text-gray-400 font-medium ml-1">L</span>';
+      weekEl.innerHTML = data.consumption_week + '<span class="text-base sm:text-lg text-gray-400 font-medium ml-1">L</span>';
+      monthEl.innerHTML = data.consumption_month + '<span class="text-base sm:text-lg text-gray-400 font-medium ml-1">L</span>';
 
       // Pump
-      let pumpStatus = data.pump;
-      let pumpEl = document.querySelector("#pump-status");
+      const pumpStatus = data.pump;
+      const pumpEl = document.getElementById("pump-status");
+      const pumpDot = document.getElementById("pump-dot");
+
       pumpEl.textContent = pumpStatus;
-      pumpEl.className = pumpStatus === "ON" ? "font-bold text-green-600" : "font-bold text-red-600";
+      if (pumpStatus === "ON") {
+        pumpDot.classList.remove("bg-red-500");
+        pumpDot.classList.add("bg-emerald-500", "pulse-glow");
+      } else {
+        pumpDot.classList.remove("bg-emerald-500", "pulse-glow");
+        pumpDot.classList.add("bg-red-500");
+      }
+
       if (pumpLastState && pumpLastState !== pumpStatus) {
-        addNotification(`🚰 Pump turned ${pumpStatus}`);
+        addNotification(`Pump turned ${pumpStatus}`);
       }
       pumpLastState = pumpStatus;
 
       // Leakage
-      let leakEl = document.querySelector("#leak-status");
+      const leakEl = document.getElementById("leak-status");
       if (data.leakage) {
-        leakEl.innerHTML = "⚠️ Leakage Detected!";
-        leakEl.className = "text-red-600 font-bold text-lg";
+        leakEl.className = "flex items-center gap-4 p-4 rounded-xl bg-red-50 transition-all duration-300";
+        leakEl.innerHTML = `
+          <div class="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0 animate-pulse">
+            <i data-lucide="alert-triangle" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <p class="font-semibold text-red-700 text-sm sm:text-base">Warning!</p>
+            <p class="text-xs sm:text-sm text-red-600">Leakage detected</p>
+          </div>
+        `;
+        lucide.createIcons();
         if (!leakAlertShown) {
-          addNotification("🚨 Leakage Detected!");
+          addNotification("Leakage Detected!");
           leakAlertShown = true;
         }
       } else {
-        leakEl.innerHTML = "✅ No Leakage";
-        leakEl.className = "text-green-600 font-bold text-lg";
+        leakEl.className = "flex items-center gap-4 p-4 rounded-xl bg-emerald-50 transition-all duration-300";
+        leakEl.innerHTML = `
+          <div class="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="check" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <p class="font-semibold text-emerald-700 text-sm sm:text-base">System Normal</p>
+            <p class="text-xs sm:text-sm text-emerald-600">No leakage detected</p>
+          </div>
+        `;
+        lucide.createIcons();
         leakAlertShown = false;
       }
 
-      // Chart update
+      // Chart
       history.push(data.flow_in);
-      labels.push(new Date().toLocaleTimeString());
+      labels.push(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       if (history.length > 20) { history.shift(); labels.shift(); }
-      chart.update();
+      chart.update('none');
 
     } catch (err) {
       console.error("Error fetching:", err);
@@ -357,17 +746,44 @@
 
   setInterval(updateData, 1500);
 
-  // Toggle Pump Button
-  document.getElementById("toggle-pump-btn").addEventListener("click", async () => {
+  // Toggle Pump
+  document.getElementById("toggle-pump-btn")?.addEventListener("click", async () => {
+    const btn = document.getElementById("toggle-pump-btn");
+    btn.disabled = true;
+    btn.textContent = "Toggling...";
+    
     try {
-      let res = await fetch("/toggle_pump", { method: "POST" });
-      let data = await res.json();
-      let pumpEl = document.querySelector("#pump-status");
+      const res = await fetch("/toggle_pump", { method: "POST" });
+      const data = await res.json();
+      const pumpEl = document.getElementById("pump-status");
+      const pumpDot = document.getElementById("pump-dot");
+
       pumpEl.textContent = data.pump;
-      pumpEl.className = data.pump === "ON" ? "font-bold text-green-600" : "font-bold text-red-600";
+      if (data.pump === "ON") {
+        pumpDot.classList.remove("bg-red-500");
+        pumpDot.classList.add("bg-emerald-500", "pulse-glow");
+      } else {
+        pumpDot.classList.remove("bg-emerald-500", "pulse-glow");
+        pumpDot.classList.add("bg-red-500");
+      }
     } catch (err) {
-      alert("⚠️ Failed to toggle pump!");
+      showToast("Failed to toggle pump!");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Toggle Pump";
     }
+  });
+
+  // Swipe to close bottom sheets
+  let touchStartY = 0;
+  [mobileNotifSheet, mobileHistorySheet].forEach(sheet => {
+    sheet?.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+    });
+    sheet?.addEventListener('touchmove', (e) => {
+      const diff = e.touches[0].clientY - touchStartY;
+      if (diff > 50) closeBottomSheets();
+    });
   });
   </script>
 </body>
