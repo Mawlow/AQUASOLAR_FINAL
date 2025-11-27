@@ -200,8 +200,25 @@ def is_esp32_online(account_id=None):
         if not last_update:
             return False
         
+        # Use timezone-aware datetime for comparison
+        from datetime import timezone
+        now = datetime.now(timezone.utc)
+        
+        # Convert Firestore timestamp to datetime if needed
+        if hasattr(last_update, 'timestamp'):
+            # Firestore timestamp - convert to datetime
+            last_update_dt = last_update
+        else:
+            last_update_dt = last_update
+        
+        # Make sure last_update is timezone-aware
+        if hasattr(last_update_dt, 'tzinfo'):
+            if last_update_dt.tzinfo is None:
+                # If naive, assume UTC
+                last_update_dt = last_update_dt.replace(tzinfo=timezone.utc)
+        
         # ESP32 is considered online if it updated within the last 60 seconds
-        time_diff = datetime.now() - last_update
+        time_diff = now - last_update_dt
         return time_diff.total_seconds() < 60
     except Exception as e:
         print(f"Error checking ESP32 status: {e}")
