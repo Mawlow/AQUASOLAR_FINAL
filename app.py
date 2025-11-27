@@ -348,7 +348,7 @@ def index():
             "battery_percent": status.get("battery_percent", 0),
             "battery_voltage": status.get("battery_voltage_V", 0),
             "current_consumed": status.get("current_A", 0),
-            "esp32_online": esp32_online,  # Add online status
+            "esp32_online": esp32_online,
             **consumption
         }
         
@@ -550,7 +550,7 @@ def status_data():
         # Check if ESP32 is online
         esp32_online = is_esp32_online()
         
-        # Convert to legacy format
+        # ✅ FIXED: Provide BOTH field name formats for compatibility
         data = {
             "pump": status.get("pump_state", "N/A"),
             "flow_in": status.get("flow_in_L_min", 0),
@@ -559,9 +559,15 @@ def status_data():
             "volume_out": status.get("volume_out_L", 0),
             "leakage": status.get("leakage_detected", False),
             "battery_percent": status.get("battery_percent", 0),
+            
+            # ✅ FIXED: Provide both old and new field names for compatibility
             "battery_voltage": status.get("battery_voltage_V", 0),
+            "battery_voltage_V": status.get("battery_voltage_V", 0),
+            
             "current_consumed": status.get("current_A", 0),
-            "esp32_online": esp32_online  # Add online status
+            "current_A": status.get("current_A", 0),
+            
+            "esp32_online": esp32_online
         }
         
         # Merge consumption summary
@@ -742,10 +748,11 @@ def health():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print("\n" + "=" * 50)
-    print("🌊 AquaSolar Flask Server (MULTI-USER)")
+    print("🌊 AquaSolar Flask Server (MULTI-USER + BATTERY FIX)")
     print(f"📊 Sensor logging: Every {SENSOR_LOG_INTERVAL}s")
     print(f"🔋 Power logging: Every {POWER_LOG_INTERVAL}s")
     print(f"💧 Consumption updates: Every {CONSUMPTION_UPDATE_INTERVAL}s")
     print("👥 Multi-user support: ENABLED")
+    print("🔋 Battery field names: FIXED")
     print("=" * 50 + "\n")
     app.run(host="0.0.0.0", port=port, debug=False)
