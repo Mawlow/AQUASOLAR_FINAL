@@ -1099,6 +1099,13 @@ def get_profile():
         account_doc = db.collection('accounts').document(account_id).get()
         account = account_doc.to_dict() if account_doc.exists else {}
         
+        # Handle created_at - if missing, add it now
+        created_at = user.get("created_at")
+        if not created_at:
+            # Set created_at for existing users who don't have it
+            created_at = datetime.now().isoformat()
+            db.collection('users').document(user_id).update({'created_at': created_at})
+        
         return jsonify({
             "user_id": user.get("user_id"),
             "first_name": user.get("first_name"),
@@ -1107,7 +1114,7 @@ def get_profile():
             "account_id": account_id,
             "device_name": account.get("device_name", "AquaSolar"),
             "admin_number": account.get("admin_number", ""),
-            "created_at": user.get("created_at", "")
+            "created_at": created_at
         })
         
     except Exception as e:
@@ -1345,7 +1352,8 @@ def register():
                 "last_name": last_name,
                 "email": email,
                 "password_hash": password,  # ⚠️ Use bcrypt in production!
-                "account_id_fk": account_id  # Link to unique account
+                "account_id_fk": account_id,  # Link to unique account
+                "created_at": datetime.now().isoformat()  # Store registration date
             }
             db.collection('users').document(user_id).set(user_data)
             print(f"✅ User {user_id} created and linked to account {account_id}")
