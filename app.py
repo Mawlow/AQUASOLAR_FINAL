@@ -1075,6 +1075,176 @@ def toggle_pump():
         return jsonify({"error": str(e)}), 500
 
 # ------------------------------- 
+# 🔹 Profile API Endpoints
+# ------------------------------- 
+@app.route("/api/profile", methods=["GET"])
+def get_profile():
+    """Get current user's profile data"""
+    if not require_login():
+        return jsonify({"error": "Not logged in"}), 403
+    
+    try:
+        user_id = session.get('user_id')
+        account_id = get_current_account_id()
+        
+        # Get user data from Firebase
+        user_doc = db.collection('users').document(user_id).get()
+        
+        if not user_doc.exists:
+            return jsonify({"error": "User not found"}), 404
+        
+        user = user_doc.to_dict()
+        
+        # Get account data
+        account_doc = db.collection('accounts').document(account_id).get()
+        account = account_doc.to_dict() if account_doc.exists else {}
+        
+        return jsonify({
+            "user_id": user.get("user_id"),
+            "first_name": user.get("first_name"),
+            "last_name": user.get("last_name"),
+            "email": user.get("email"),
+            "account_id": account_id,
+            "device_name": account.get("device_name", "AquaSolar"),
+            "admin_number": account.get("admin_number", ""),
+            "created_at": user.get("created_at", "")
+        })
+        
+    except Exception as e:
+        print(f"❌ Error getting profile: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/profile", methods=["PUT"])
+def update_profile():
+    """Update user profile"""
+    if not require_login():
+        return jsonify({"error": "Not logged in"}), 403
+    
+    try:
+        user_id = session.get('user_id')
+        account_id = get_current_account_id()
+        data = request.get_json()
+        
+        # Update user info
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        
+        if first_name and last_name:
+            db.collection('users').document(user_id).update({
+                'first_name': first_name,
+                'last_name': last_name
+            })
+            
+            # Update session
+            session["user_name"] = f"{first_name} {last_name}"
+        
+        # Update account info
+        device_name = data.get('device_name')
+        admin_number = data.get('admin_number')
+        
+        update_data = {}
+        if device_name:
+            update_data['device_name'] = device_name
+        if admin_number:
+            update_data['admin_number'] = admin_number
+        
+        if update_data:
+            db.collection('accounts').document(account_id).update(update_data)
+        
+        print(f"✅ Profile updated for user {user_id}")
+        return jsonify({"success": True, "message": "Profile updated successfully"})
+        
+    except Exception as e:
+        print(f"❌ Error updating profile: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/profile/email", methods=["PUT"])
+def update_email():
+    """Update user email"""
+    if not require_login():
+        return jsonify({"error": "Not logged in"}), 403
+    
+    try:
+        user_id = session.get('user_id')
+        data = request.get_json()
+        
+        new_email = data.get('email')
+        password = data.get('password')
+        
+        if not new_email or not password:
+            return jsonify({"error": "Email and password are required"}), 400
+        
+        # Verify current password
+        user_doc = db.collection('users').document(user_id).get()
+        
+        if not user_doc.exists:
+            return jsonify({"error": "User not found"}), 404
+        
+        user = user_doc.to_dict()
+        
+        if user.get('password_hash') != password:
+            return jsonify({"error": "Incorrect password"}), 403
+        
+        # Check if email already exists
+        existing = db.collection('users').where('email', '==', new_email).limit(1).get()
+        for doc in existing:
+            if doc.id != user_id:
+                return jsonify({"error": "Email already in use"}), 400
+        
+        # Update email
+        db.collection('users').document(user_id).update({'email': new_email})
+        
+        # Update session
+        session["user"] = new_email
+        
+        print(f"✅ Email updated for user {user_id}")
+        return jsonify({"success": True, "message": "Email updated successfully"})
+        
+    except Exception as e:
+        print(f"❌ Error updating email: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/profile/password", methods=["PUT"])
+def update_password():
+    """Update user password"""
+    if not require_login():
+        return jsonify({"error": "Not logged in"}), 403
+    
+    try:
+        user_id = session.get('user_id')
+        data = request.get_json()
+        
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        
+        if not current_password or not new_password:
+            return jsonify({"error": "Current and new password are required"}), 400
+        
+        if len(new_password) < 6:
+            return jsonify({"error": "New password must be at least 6 characters"}), 400
+        
+        # Verify current password
+        user_doc = db.collection('users').document(user_id).get()
+        
+        if not user_doc.exists:
+            return jsonify({"error": "User not found"}), 404
+        
+        user = user_doc.to_dict()
+        
+        if user.get('password_hash') != current_password:
+            return jsonify({"error": "Incorrect current password"}), 403
+        
+        # Update password
+        db.collection('users').document(user_id).update({'password_hash': new_password})
+        
+        print(f"✅ Password updated for user {user_id}")
+        return jsonify({"success": True, "message": "Password updated successfully"})
+        
+    except Exception as e:
+        print(f"❌ Error updating password: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# ------------------------------- 
 # 🔹 Authentication Routes
 # ------------------------------- 
 @app.route("/login", methods=["GET", "POST"])
