@@ -1,11 +1,13 @@
-from flask import Flask, render_template, redirect, request, session, url_for, jsonify
+from flask import Flask, render_template, redirect, request, session, url_for, jsonify, Response
 from flask_cors import CORS
 import firebase_admin
 from firebase_admin import credentials, firestore
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 import uuid
 import time
+import csv
+import io
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for ESP32 communication
@@ -201,7 +203,6 @@ def is_esp32_online(account_id=None):
             return False
         
         # Use timezone-aware datetime for comparison
-        from datetime import timezone
         now = datetime.now(timezone.utc)
         
         # Convert Firestore timestamp to datetime if needed
@@ -329,6 +330,229 @@ def get_user_by_email(email):
         return None
 
 # ------------------------------- 
+# 🔹 Usage Summary Functions
+# ------------------------------- 
+def get_usage_data_by_date_range(start_date, end_date, account_id=None):
+    """Get all usage data within a date range"""
+    if account_id is None:
+        account_id = get_current_account_id()
+    
+    print(f"📊 Fetching usage data for account: {account_id}")
+    print(f"📅 Date range: {start_date} to {end_date}")
+    
+    if not account_id:
+        print("❌ No account_id provided!")
+        return None
+    
+    try:
+        consumption_ref = get_subcollection('consumption', account_id)
+        sensor_ref = get_subcollection('sensor_logs', account_id)
+        power_ref = get_subcollection('power_logs', account_id)
+        control_ref = get_subcollection('control_logs', account_id)
+        alerts_ref = get_subcollection('alerts', account_id)
+        
+        # Parse dates
+        start = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end = datetime.strptime(end_date, "%Y-%m-%d").date()
+        
+        # Get consumption data
+        consumption_data = []
+        consumption_docs = consumption_ref.get()
+        print(f"📦 Found {len(consumption_docs)} total consumption records")
+        for doc in consumption_docs:
+            data = doc.to_dict()
+            try:
+                date_str = data.get('consumption_date')
+                if date_str:
+                    record_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                    if start <= record_date <= end:
+                        consumption_data.append({
+                            'date': date_str,
+                            'consumption_total': data.get('consumption_total', 0) or 0,
+                            'pump_cycles': data.get('pump_cycles', 0) or 0
+                        })
+            except Exception as e:
+                print(f"⚠️ Error parsing consumption: {e}")
+                continue
+        
+        # Sort by date
+        consumption_data.sort(key=lambda x: x['date'])
+        print(f"   - In date range: {len(consumption_data)}")
+        
+        # Get sensor logs
+        sensor_logs = []
+        sensor_docs = sensor_ref.get()
+        print(f"📦 Found {len(sensor_docs)} total sensor logs")
+        for doc in sensor_docs:
+            data = doc.to_dict()
+            timestamp = data.get('timestamp')
+            if timestamp:
+                try:
+                    # Handle Firestore timestamp
+                    if hasattr(timestamp, 'date'):
+                        log_date = timestamp.date()
+                    elif hasattr(timestamp, 'strftime'):
+                        log_date = timestamp.date() if hasattr(timestamp, 'date') else datetime.fromisoformat(str(timestamp)[:10]).date()
+                    else:
+                        log_date = datetime.strptime(str(timestamp)[:10], "%Y-%m-%d").date()
+                    
+                    if start <= log_date <= end:
+                        sensor_logs.append({
+                            'timestamp': str(timestamp),
+                            'reading_value': data.get('reading_value', 0) or 0,
+                            'unit': data.get('unit', 'L/min'),
+                            'sensor_id': data.get('sensor_id_fk', 'Unknown')
+                        })
+                except Exception as e:
+                    print(f"⚠️ Error parsing sensor log: {e}")
+                    continue
+        print(f"   - In date range: {len(sensor_logs)}")
+        
+        # Get power logs
+        power_logs = []
+        power_docs = power_ref.get()
+        print(f"📦 Found {len(power_docs)} total power logs")
+        for doc in power_docs:
+            data = doc.to_dict()
+            timestamp = data.get('recorded_at')
+            if timestamp:
+                try:
+                    if hasattr(timestamp, 'date'):
+                        log_date = timestamp.date()
+                    elif hasattr(timestamp, 'strftime'):
+                        log_date = timestamp.date() if hasattr(timestamp, 'date') else datetime.fromisoformat(str(timestamp)[:10]).date()
+                    else:
+                        log_date = datetime.strptime(str(timestamp)[:10], "%Y-%m-%d").date()
+                    
+                    if start <= log_date <= end:
+                        power_logs.append({
+                            'timestamp': str(timestamp),
+                            'voltage': data.get('power_level_V', 0) or 0,
+                            'current': data.get('current_A', 0) or 0,
+                            'battery_percent': data.get('battery_percent', 0) or 0
+                        })
+                except Exception as e:
+                    print(f"⚠️ Error parsing power log: {e}")
+                    continue
+        print(f"   - In date range: {len(power_logs)}")
+        
+        # Get control logs
+        control_logs = []
+        control_docs = control_ref.get()
+        print(f"📦 Found {len(control_docs)} total control logs")
+        for doc in control_docs:
+            data = doc.to_dict()
+            timestamp = data.get('control_time')
+            if timestamp:
+                try:
+                    if hasattr(timestamp, 'date'):
+                        log_date = timestamp.date()
+                    elif hasattr(timestamp, 'strftime'):
+                        log_date = timestamp.date() if hasattr(timestamp, 'date') else datetime.fromisoformat(str(timestamp)[:10]).date()
+                    else:
+                        log_date = datetime.strptime(str(timestamp)[:10], "%Y-%m-%d").date()
+                    
+                    if start <= log_date <= end:
+                        control_logs.append({
+                            'timestamp': str(timestamp),
+                            'action': data.get('action', 'Unknown'),
+                            'method': data.get('method', 'Unknown'),
+                            'details': data.get('details', '') or ''
+                        })
+                except Exception as e:
+                    print(f"⚠️ Error parsing control log: {e}")
+                    continue
+        print(f"   - In date range: {len(control_logs)}")
+        
+        # Get alerts
+        alerts = []
+        alerts_docs = alerts_ref.get()
+        print(f"📦 Found {len(alerts_docs)} total alerts")
+        for doc in alerts_docs:
+            data = doc.to_dict()
+            timestamp = data.get('alert_date')
+            if timestamp:
+                try:
+                    if hasattr(timestamp, 'date'):
+                        log_date = timestamp.date()
+                    elif hasattr(timestamp, 'strftime'):
+                        log_date = timestamp.date() if hasattr(timestamp, 'date') else datetime.fromisoformat(str(timestamp)[:10]).date()
+                    else:
+                        log_date = datetime.strptime(str(timestamp)[:10], "%Y-%m-%d").date()
+                    
+                    if start <= log_date <= end:
+                        alerts.append({
+                            'timestamp': str(timestamp),
+                            'alert_type': data.get('alert_type', 'Unknown'),
+                            'status': data.get('status', 'Unknown'),
+                            'details': data.get('details', '') or ''
+                        })
+                except Exception as e:
+                    print(f"⚠️ Error parsing alert: {e}")
+                    continue
+        print(f"   - In date range: {len(alerts)}")
+        
+        # Calculate summary statistics
+        total_consumption = sum(c['consumption_total'] for c in consumption_data) if consumption_data else 0
+        total_pump_cycles = sum(c['pump_cycles'] for c in consumption_data) if consumption_data else 0
+        avg_daily_consumption = total_consumption / len(consumption_data) if consumption_data else 0
+        
+        # Calculate average battery if power logs exist
+        avg_battery = 0
+        if power_logs:
+            avg_battery = sum(p['battery_percent'] for p in power_logs) / len(power_logs)
+        
+        result = {
+            'summary': {
+                'start_date': start_date,
+                'end_date': end_date,
+                'total_days': (end - start).days + 1,
+                'total_consumption': round(total_consumption, 2),
+                'total_pump_cycles': int(total_pump_cycles),
+                'avg_daily_consumption': round(avg_daily_consumption, 2),
+                'avg_battery_percent': round(avg_battery, 1),
+                'total_alerts': len(alerts),
+                'total_sensor_logs': len(sensor_logs),
+                'total_power_logs': len(power_logs),
+                'total_control_logs': len(control_logs)
+            },
+            'consumption': consumption_data,
+            'sensor_logs': sensor_logs[-100:],  # Limit to last 100
+            'power_logs': power_logs[-100:],
+            'control_logs': control_logs[-100:],
+            'alerts': alerts
+        }
+        
+        print(f"✅ Usage data fetched successfully!")
+        return result
+        
+    except Exception as e:
+        print(f"❌ Error getting usage data: {e}")
+        import traceback
+        traceback.print_exc()
+        # Return empty structure instead of None
+        return {
+            'summary': {
+                'start_date': start_date,
+                'end_date': end_date,
+                'total_days': 0,
+                'total_consumption': 0,
+                'total_pump_cycles': 0,
+                'avg_daily_consumption': 0,
+                'avg_battery_percent': 0,
+                'total_alerts': 0,
+                'total_sensor_logs': 0,
+                'total_power_logs': 0,
+                'total_control_logs': 0
+            },
+            'consumption': [],
+            'sensor_logs': [],
+            'power_logs': [],
+            'control_logs': [],
+            'alerts': []
+        }
+
+# ------------------------------- 
 # 🔹 Routes
 # ------------------------------- 
 @app.route('/')
@@ -380,6 +604,229 @@ def index():
                              status={},
                              user_name=session.get("user_name"),
                              error="Failed to load dashboard data")
+
+# ------------------------------- 
+# 🔹 Usage Summary API Endpoints
+# ------------------------------- 
+@app.route("/api/usage-summary", methods=["GET"])
+def get_usage_summary():
+    """Get usage summary with date range filter"""
+    if not require_login():
+        return jsonify({"error": "Not logged in"}), 403
+    
+    try:
+        account_id = get_current_account_id()
+        
+        if not account_id:
+            print("❌ No account_id in session!")
+            return jsonify({"error": "No account found. Please log in again."}), 403
+        
+        # Get date range from query parameters
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Default to last 30 days if not specified
+        if not end_date:
+            end_date = datetime.now().date().isoformat()
+        if not start_date:
+            start_date = (datetime.now().date() - timedelta(days=30)).isoformat()
+        
+        print(f"📊 API request - Account: {account_id}, Range: {start_date} to {end_date}")
+        
+        # Get usage data
+        usage_data = get_usage_data_by_date_range(start_date, end_date, account_id)
+        
+        # Always return valid data structure
+        if usage_data is None:
+            usage_data = {
+                'summary': {
+                    'start_date': start_date,
+                    'end_date': end_date,
+                    'total_days': 0,
+                    'total_consumption': 0,
+                    'total_pump_cycles': 0,
+                    'avg_daily_consumption': 0,
+                    'avg_battery_percent': 0,
+                    'total_alerts': 0,
+                    'total_sensor_logs': 0,
+                    'total_power_logs': 0,
+                    'total_control_logs': 0
+                },
+                'consumption': [],
+                'sensor_logs': [],
+                'power_logs': [],
+                'control_logs': [],
+                'alerts': []
+            }
+        
+        return jsonify(usage_data)
+            
+    except Exception as e:
+        print(f"❌ Error getting usage summary: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/download-csv", methods=["GET"])
+def download_csv():
+    """Download usage data as CSV"""
+    if not require_login():
+        return jsonify({"error": "Not logged in"}), 403
+    
+    try:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        data_type = request.args.get('type', 'consumption')  # consumption, sensor, power, control, alerts
+        
+        # Default dates
+        if not end_date:
+            end_date = datetime.now().date().isoformat()
+        if not start_date:
+            start_date = (datetime.now().date() - timedelta(days=30)).isoformat()
+        
+        usage_data = get_usage_data_by_date_range(start_date, end_date)
+        
+        if not usage_data:
+            return jsonify({"error": "No data found"}), 404
+        
+        # Create CSV
+        output = io.StringIO()
+        
+        if data_type == 'consumption':
+            writer = csv.writer(output)
+            writer.writerow(['Date', 'Total Consumption (L)', 'Pump Cycles'])
+            for row in usage_data['consumption']:
+                writer.writerow([row['date'], row['consumption_total'], row['pump_cycles']])
+        
+        elif data_type == 'sensor':
+            writer = csv.writer(output)
+            writer.writerow(['Timestamp', 'Sensor ID', 'Reading Value', 'Unit'])
+            for row in usage_data['sensor_logs']:
+                writer.writerow([row['timestamp'], row['sensor_id'], row['reading_value'], row['unit']])
+        
+        elif data_type == 'power':
+            writer = csv.writer(output)
+            writer.writerow(['Timestamp', 'Voltage (V)', 'Current (A)', 'Battery (%)'])
+            for row in usage_data['power_logs']:
+                writer.writerow([row['timestamp'], row['voltage'], row['current'], row['battery_percent']])
+        
+        elif data_type == 'control':
+            writer = csv.writer(output)
+            writer.writerow(['Timestamp', 'Action', 'Method', 'Details'])
+            for row in usage_data['control_logs']:
+                writer.writerow([row['timestamp'], row['action'], row['method'], row['details']])
+        
+        elif data_type == 'alerts':
+            writer = csv.writer(output)
+            writer.writerow(['Timestamp', 'Alert Type', 'Status', 'Details'])
+            for row in usage_data['alerts']:
+                writer.writerow([row['timestamp'], row['alert_type'], row['status'], row['details']])
+        
+        elif data_type == 'summary':
+            writer = csv.writer(output)
+            writer.writerow(['Metric', 'Value'])
+            summary = usage_data['summary']
+            writer.writerow(['Date Range', f"{summary['start_date']} to {summary['end_date']}"])
+            writer.writerow(['Total Days', summary['total_days']])
+            writer.writerow(['Total Consumption (L)', summary['total_consumption']])
+            writer.writerow(['Total Pump Cycles', summary['total_pump_cycles']])
+            writer.writerow(['Avg Daily Consumption (L)', summary['avg_daily_consumption']])
+            writer.writerow(['Avg Battery (%)', summary['avg_battery_percent']])
+            writer.writerow(['Total Alerts', summary['total_alerts']])
+        
+        else:
+            return jsonify({"error": "Invalid data type"}), 400
+        
+        output.seek(0)
+        
+        filename = f"aquasolar_{data_type}_{start_date}_to_{end_date}.csv"
+        
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename={filename}'}
+        )
+        
+    except Exception as e:
+        print(f"Error generating CSV: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/download-report", methods=["GET"])
+def download_report():
+    """Download full usage report as CSV (all data combined)"""
+    if not require_login():
+        return jsonify({"error": "Not logged in"}), 403
+    
+    try:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Default dates
+        if not end_date:
+            end_date = datetime.now().date().isoformat()
+        if not start_date:
+            start_date = (datetime.now().date() - timedelta(days=30)).isoformat()
+        
+        usage_data = get_usage_data_by_date_range(start_date, end_date)
+        
+        if not usage_data:
+            return jsonify({"error": "No data found"}), 404
+        
+        # Create comprehensive CSV report
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Summary Section
+        writer.writerow(['=== AQUASOLAR USAGE REPORT ==='])
+        writer.writerow([])
+        writer.writerow(['SUMMARY'])
+        writer.writerow(['Metric', 'Value'])
+        summary = usage_data['summary']
+        writer.writerow(['Report Generated', datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
+        writer.writerow(['Date Range', f"{summary['start_date']} to {summary['end_date']}"])
+        writer.writerow(['Total Days', summary['total_days']])
+        writer.writerow(['Total Water Consumption (L)', summary['total_consumption']])
+        writer.writerow(['Total Pump Cycles', summary['total_pump_cycles']])
+        writer.writerow(['Average Daily Consumption (L)', summary['avg_daily_consumption']])
+        writer.writerow(['Average Battery Level (%)', summary['avg_battery_percent']])
+        writer.writerow(['Total Alerts', summary['total_alerts']])
+        writer.writerow([])
+        
+        # Daily Consumption Section
+        writer.writerow(['DAILY CONSUMPTION'])
+        writer.writerow(['Date', 'Consumption (L)', 'Pump Cycles'])
+        for row in usage_data['consumption']:
+            writer.writerow([row['date'], row['consumption_total'], row['pump_cycles']])
+        writer.writerow([])
+        
+        # Alerts Section
+        if usage_data['alerts']:
+            writer.writerow(['ALERTS'])
+            writer.writerow(['Timestamp', 'Type', 'Status', 'Details'])
+            for row in usage_data['alerts']:
+                writer.writerow([row['timestamp'], row['alert_type'], row['status'], row['details']])
+            writer.writerow([])
+        
+        # Control Logs Section
+        if usage_data['control_logs']:
+            writer.writerow(['CONTROL LOGS'])
+            writer.writerow(['Timestamp', 'Action', 'Method', 'Details'])
+            for row in usage_data['control_logs']:
+                writer.writerow([row['timestamp'], row['action'], row['method'], row['details']])
+        
+        output.seek(0)
+        
+        filename = f"aquasolar_full_report_{start_date}_to_{end_date}.csv"
+        
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename={filename}'}
+        )
+        
+    except Exception as e:
+        print(f"Error generating report: {e}")
+        return jsonify({"error": str(e)}), 500
 
 # ------------------------------- 
 # 🔹 ESP32 Communication Endpoints (OPTIMIZED)
@@ -765,11 +1212,11 @@ def health():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print("\n" + "=" * 50)
-    print("🌊 AquaSolar Flask Server (MULTI-USER + BATTERY FIX)")
+    print("🌊 AquaSolar Flask Server (MULTI-USER + USAGE REPORTS)")
     print(f"📊 Sensor logging: Every {SENSOR_LOG_INTERVAL}s")
     print(f"🔋 Power logging: Every {POWER_LOG_INTERVAL}s")
     print(f"💧 Consumption updates: Every {CONSUMPTION_UPDATE_INTERVAL}s")
     print("👥 Multi-user support: ENABLED")
-    print("🔋 Battery field names: FIXED")
+    print("📈 Usage Reports: ENABLED")
     print("=" * 50 + "\n")
     app.run(host="0.0.0.0", port=port, debug=False)

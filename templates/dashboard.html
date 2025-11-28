@@ -32,11 +32,16 @@
       from { opacity: 0; transform: scale(0.8); }
       to { opacity: 1; transform: scale(1); }
     }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
     
     .animate-fade-in { animation: fadeIn 0.2s ease-out; }
     .animate-slide-up { animation: slideUp 0.4s ease-out; }
     .animate-count { animation: countUp 0.3s ease-out; }
     .pulse-glow { animation: pulse-glow 2s infinite; }
+    .animate-spin { animation: spin 1s linear infinite; }
     
     .card-interactive {
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -69,6 +74,16 @@
     .value-flash {
       animation: countUp 0.3s ease-out;
     }
+    
+    /* Modal styles */
+    .modal-overlay {
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal-content {
+      animation: slideUp 0.3s ease-out;
+    }
   </style>
 </head>
 
@@ -91,6 +106,13 @@
 
         <!-- Desktop Actions -->
         <div class="hidden sm:flex items-center gap-3">
+          <!-- Usage Summary Button -->
+          <button id="usage-summary-btn" 
+                  class="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 btn-press">
+            <i data-lucide="file-text" class="w-5 h-5 text-gray-700"></i>
+            <span class="text-sm font-medium text-gray-700 hidden md:inline">Reports</span>
+          </button>
+          
           <!-- Notification -->
           <div class="relative">
             <button id="notif-btn" 
@@ -149,6 +171,9 @@
 
         <!-- Mobile Menu Button -->
         <div class="flex items-center gap-2 sm:hidden">
+          <button id="mobile-report-btn" class="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <i data-lucide="file-text" class="w-5 h-5 text-gray-700"></i>
+          </button>
           <button id="mobile-notif-btn" class="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <i data-lucide="bell" class="w-5 h-5 text-gray-700"></i>
             <span id="mobile-notif-count" 
@@ -178,6 +203,10 @@
         <p class="text-sm text-gray-500">Logged in as</p>
         <p class="font-semibold text-gray-900">{{ user_name }}</p>
       </div>
+      <button onclick="openUsageSummaryModal(); closeMobileMenu();" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+        <i data-lucide="file-text" class="w-5 h-5 text-gray-600"></i>
+        <span class="text-gray-700">Usage Reports</span>
+      </button>
       <button onclick="openMobileNotifications()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
         <i data-lucide="bell" class="w-5 h-5 text-gray-600"></i>
         <span class="text-gray-700">Notifications</span>
@@ -222,6 +251,171 @@
     <ul id="mobile-history-list" class="overflow-y-auto divide-y divide-gray-100" style="max-height: 50vh;">
       <li class="p-4 text-center text-gray-400 text-sm">No history yet</li>
     </ul>
+  </div>
+
+  <!-- Usage Summary Modal -->
+  <div id="usage-modal" class="fixed inset-0 z-50 hidden">
+    <div class="modal-overlay absolute inset-0" onclick="closeUsageSummaryModal()"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="modal-content bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden relative">
+        <!-- Modal Header -->
+        <div class="sticky top-0 bg-white border-b border-gray-100 p-4 sm:p-6 flex items-center justify-between z-10">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+              <i data-lucide="bar-chart-3" class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600"></i>
+            </div>
+            <div>
+              <h2 class="text-lg sm:text-xl font-bold text-gray-900">Usage Summary</h2>
+              <p class="text-xs sm:text-sm text-gray-500">Generate and download reports</p>
+            </div>
+          </div>
+          <button onclick="closeUsageSummaryModal()" class="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+            <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
+          </button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-4 sm:p-6 overflow-y-auto" style="max-height: calc(90vh - 180px);">
+          <!-- Date Range Selection -->
+          <div class="bg-gray-50 rounded-2xl p-4 mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">Select Date Range</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Start Date</label>
+                <input type="date" id="start-date" 
+                       class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all outline-none text-sm">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">End Date</label>
+                <input type="date" id="end-date" 
+                       class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all outline-none text-sm">
+              </div>
+            </div>
+            
+            <!-- Quick Select Buttons -->
+            <div class="flex flex-wrap gap-2 mt-4">
+              <button onclick="setDateRange(7)" class="px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">Last 7 days</button>
+              <button onclick="setDateRange(30)" class="px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">Last 30 days</button>
+              <button onclick="setDateRange(90)" class="px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">Last 90 days</button>
+              <button onclick="setThisMonth()" class="px-3 py-1.5 text-xs font-medium bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">This Month</button>
+            </div>
+            
+            <button onclick="fetchUsageSummary()" 
+                    class="w-full mt-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all btn-press flex items-center justify-center gap-2">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              <span>Generate Report</span>
+            </button>
+          </div>
+          
+          <!-- Loading State -->
+          <div id="summary-loading" class="hidden py-12 text-center">
+            <div class="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-gray-500">Fetching data...</p>
+          </div>
+          
+          <!-- Summary Results -->
+          <div id="summary-results" class="hidden">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
+                <p class="text-xs text-blue-600 font-medium mb-1">Total Water</p>
+                <p id="summary-total-water" class="text-xl sm:text-2xl font-bold text-blue-700">0 L</p>
+              </div>
+              <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-4">
+                <p class="text-xs text-emerald-600 font-medium mb-1">Avg Daily</p>
+                <p id="summary-avg-daily" class="text-xl sm:text-2xl font-bold text-emerald-700">0 L</p>
+              </div>
+              <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-4">
+                <p class="text-xs text-amber-600 font-medium mb-1">Pump Cycles</p>
+                <p id="summary-pump-cycles" class="text-xl sm:text-2xl font-bold text-amber-700">0</p>
+              </div>
+              <div class="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl p-4">
+                <p class="text-xs text-rose-600 font-medium mb-1">Alerts</p>
+                <p id="summary-alerts" class="text-xl sm:text-2xl font-bold text-rose-700">0</p>
+              </div>
+            </div>
+            
+            <!-- Daily Consumption Chart -->
+            <div class="bg-white border border-gray-200 rounded-2xl p-4 mb-6">
+              <h3 class="text-sm font-semibold text-gray-700 mb-4">Daily Consumption</h3>
+              <div class="h-48 sm:h-64">
+                <canvas id="summaryChart"></canvas>
+              </div>
+            </div>
+            
+            <!-- Data Table -->
+            <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden mb-6">
+              <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-700">Daily Breakdown</h3>
+                <span id="summary-date-range" class="text-xs text-gray-500"></span>
+              </div>
+              <div class="overflow-x-auto max-h-64">
+                <table class="w-full">
+                  <thead class="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Date</th>
+                      <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">Consumption (L)</th>
+                      <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600">Pump Cycles</th>
+                    </tr>
+                  </thead>
+                  <tbody id="summary-table-body" class="divide-y divide-gray-100">
+                    <tr>
+                      <td colspan="3" class="px-4 py-8 text-center text-gray-400 text-sm">No data available</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Download Options -->
+            <div class="bg-gray-50 rounded-2xl p-4">
+              <h3 class="text-sm font-semibold text-gray-700 mb-3">Download Data</h3>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <button onclick="downloadCSV('summary')" 
+                        class="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors btn-press">
+                  <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+                  <span class="text-sm font-medium text-gray-700">Summary</span>
+                </button>
+                <button onclick="downloadCSV('consumption')" 
+                        class="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors btn-press">
+                  <i data-lucide="droplets" class="w-4 h-4 text-blue-600"></i>
+                  <span class="text-sm font-medium text-gray-700">Consumption</span>
+                </button>
+                <button onclick="downloadCSV('power')" 
+                        class="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors btn-press">
+                  <i data-lucide="battery" class="w-4 h-4 text-amber-600"></i>
+                  <span class="text-sm font-medium text-gray-700">Power</span>
+                </button>
+                <button onclick="downloadCSV('control')" 
+                        class="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors btn-press">
+                  <i data-lucide="settings" class="w-4 h-4 text-purple-600"></i>
+                  <span class="text-sm font-medium text-gray-700">Control Logs</span>
+                </button>
+                <button onclick="downloadCSV('alerts')" 
+                        class="flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors btn-press">
+                  <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i>
+                  <span class="text-sm font-medium text-gray-700">Alerts</span>
+                </button>
+                <button onclick="downloadFullReport()" 
+                        class="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors btn-press">
+                  <i data-lucide="download" class="w-4 h-4"></i>
+                  <span class="text-sm font-medium">Full Report</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Empty State -->
+          <div id="summary-empty" class="py-12 text-center">
+            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i data-lucide="calendar-search" class="w-8 h-8 text-gray-400"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Select a date range</h3>
+            <p class="text-sm text-gray-500">Choose your desired date range and click "Generate Report" to view usage summary.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Main Content -->
@@ -441,12 +635,204 @@
   const mobileClearHistory = document.getElementById("mobile-clear-history");
   const toast = document.getElementById("toast");
   const toastMessage = document.getElementById("toast-message");
+  const usageSummaryBtn = document.getElementById("usage-summary-btn");
+  const mobileReportBtn = document.getElementById("mobile-report-btn");
+  const usageModal = document.getElementById("usage-modal");
 
   let notifications = [];
   let leakAlertShown = false;
   let lowBatteryAlertShown = false;
   let pumpLastState = "";
   let historyData = JSON.parse(localStorage.getItem("aqua_history") || "[]");
+  let summaryChart = null;
+
+  // Initialize date inputs
+  function initDateInputs() {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    document.getElementById('end-date').value = today.toISOString().split('T')[0];
+    document.getElementById('start-date').value = thirtyDaysAgo.toISOString().split('T')[0];
+  }
+
+  // Set date range quickly
+  function setDateRange(days) {
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - days);
+    
+    document.getElementById('end-date').value = today.toISOString().split('T')[0];
+    document.getElementById('start-date').value = startDate.toISOString().split('T')[0];
+  }
+
+  function setThisMonth() {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    document.getElementById('end-date').value = today.toISOString().split('T')[0];
+    document.getElementById('start-date').value = firstDay.toISOString().split('T')[0];
+  }
+
+  // Usage Summary Modal Functions
+  function openUsageSummaryModal() {
+    usageModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    initDateInputs();
+    lucide.createIcons();
+  }
+
+  function closeUsageSummaryModal() {
+    usageModal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  usageSummaryBtn?.addEventListener('click', openUsageSummaryModal);
+  mobileReportBtn?.addEventListener('click', openUsageSummaryModal);
+
+  // Fetch Usage Summary
+  async function fetchUsageSummary() {
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    
+    if (!startDate || !endDate) {
+      showToast('Please select both start and end dates');
+      return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+      showToast('Start date must be before end date');
+      return;
+    }
+    
+    // Show loading
+    document.getElementById('summary-loading').classList.remove('hidden');
+    document.getElementById('summary-results').classList.add('hidden');
+    document.getElementById('summary-empty').classList.add('hidden');
+    
+    try {
+      const response = await fetch(`/api/usage-summary?start_date=${startDate}&end_date=${endDate}`);
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      // Update summary cards
+      document.getElementById('summary-total-water').textContent = `${data.summary.total_consumption} L`;
+      document.getElementById('summary-avg-daily').textContent = `${data.summary.avg_daily_consumption} L`;
+      document.getElementById('summary-pump-cycles').textContent = data.summary.total_pump_cycles;
+      document.getElementById('summary-alerts').textContent = data.summary.total_alerts;
+      document.getElementById('summary-date-range').textContent = `${startDate} to ${endDate}`;
+      
+      // Update table
+      const tableBody = document.getElementById('summary-table-body');
+      if (data.consumption && data.consumption.length > 0) {
+        tableBody.innerHTML = data.consumption.map(row => `
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-3 text-sm text-gray-900">${row.date}</td>
+            <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">${row.consumption_total}</td>
+            <td class="px-4 py-3 text-sm text-gray-900 text-right">${row.pump_cycles}</td>
+          </tr>
+        `).join('');
+      } else {
+        tableBody.innerHTML = '<tr><td colspan="3" class="px-4 py-8 text-center text-gray-400 text-sm">No consumption data for this period</td></tr>';
+      }
+      
+      // Update chart
+      updateSummaryChart(data.consumption);
+      
+      // Show results
+      document.getElementById('summary-loading').classList.add('hidden');
+      document.getElementById('summary-results').classList.remove('hidden');
+      
+      lucide.createIcons();
+      
+    } catch (error) {
+      console.error('Error fetching summary:', error);
+      document.getElementById('summary-loading').classList.add('hidden');
+      document.getElementById('summary-empty').classList.remove('hidden');
+      showToast('Failed to fetch usage data');
+    }
+  }
+
+  // Update Summary Chart
+  function updateSummaryChart(consumption) {
+    const ctx = document.getElementById('summaryChart').getContext('2d');
+    
+    if (summaryChart) {
+      summaryChart.destroy();
+    }
+    
+    const labels = consumption.map(c => c.date);
+    const values = consumption.map(c => c.consumption_total);
+    
+    summaryChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Consumption (L)',
+          data: values,
+          backgroundColor: 'rgba(16, 185, 129, 0.7)',
+          borderColor: 'rgb(16, 185, 129)',
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: '#f3f4f6', drawBorder: false },
+            ticks: { color: '#9ca3af', font: { size: 11 } }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { 
+              color: '#9ca3af', 
+              font: { size: 10 },
+              maxRotation: 45,
+              minRotation: 45
+            }
+          }
+        },
+        plugins: { 
+          legend: { display: false }
+        }
+      }
+    });
+  }
+
+  // Download CSV
+  function downloadCSV(type) {
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    
+    if (!startDate || !endDate) {
+      showToast('Please generate a report first');
+      return;
+    }
+    
+    window.location.href = `/api/download-csv?start_date=${startDate}&end_date=${endDate}&type=${type}`;
+    showToast(`Downloading ${type} data...`);
+  }
+
+  // Download Full Report
+  function downloadFullReport() {
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    
+    if (!startDate || !endDate) {
+      showToast('Please generate a report first');
+      return;
+    }
+    
+    window.location.href = `/api/download-report?start_date=${startDate}&end_date=${endDate}`;
+    showToast('Downloading full report...');
+  }
 
   // Mobile Menu Functions
   function openMobileMenu() {
@@ -784,6 +1170,13 @@
       const diff = e.touches[0].clientY - touchStartY;
       if (diff > 50) closeBottomSheets();
     });
+  });
+
+  // Close modal with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeUsageSummaryModal();
+    }
   });
   </script>
 </body>
