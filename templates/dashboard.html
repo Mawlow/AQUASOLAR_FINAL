@@ -160,7 +160,7 @@
           <div class="flex items-center gap-3">
             <button id="profile-btn" class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 transition-colors btn-press">
               <div class="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
-                <span class="text-white font-semibold text-sm">{{ user_name[:1] }}</span>
+                <span class="text-black font-semibold text-sm">{{ user_name[:1] }}</span>
               </div>
               <div class="text-left hidden md:block">
                 <p class="text-sm font-semibold text-gray-900">{{ user_name }}</p>
@@ -312,7 +312,7 @@
             </div>
             
             <button onclick="fetchUsageSummary()" 
-                    class="w-full mt-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all btn-press flex items-center justify-center gap-2">
+                    class="w-full mt-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-black font-semibold rounded-xl transition-all btn-press flex items-center justify-center gap-2">
               <i data-lucide="search" class="w-4 h-4"></i>
               <span>Generate Report</span>
             </button>
@@ -1421,13 +1421,13 @@
       bar.style.width = batteryPercent + "%";
       percentDisplay.innerHTML = batteryPercent + '<span class="text-xl sm:text-2xl text-gray-400">%</span>';
       
-      bar.classList.remove("bg-emerald-500", "bg-amber-500", "bg-red-500");
+      bar.classList.remove("bg-green-500", "bg-orange-500", "bg-red-500");
       if (batteryPercent <= 30) {
         bar.classList.add("bg-red-500");
       } else if (batteryPercent <= 60) {
-        bar.classList.add("bg-amber-500");
+        bar.classList.add("bg-orange-500");
       } else {
-        bar.classList.add("bg-emerald-500");
+        bar.classList.add("bg-green-500");
       }
 
       if (batteryPercent <= 10 && !lowBatteryAlertShown) {
