@@ -8,7 +8,107 @@
   <script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="color-scheme" content="light dark">
   <style>
+    /* Dark Mode Variables */
+    :root {
+      color-scheme: light;
+    }
+  
+    html.dark {
+      color-scheme: dark;
+    }
+  
+    /* Dark Mode Styles */
+    html.dark {
+      background-color: #0f172a;
+      color: #e2e8f0;
+    }
+  
+    html.dark body {
+      background-color: #0f172a;
+      color: #e2e8f0;
+    }
+  
+    html.dark header {
+      background-color: #1e293b !important;
+      border-color: #334155 !important;
+    }
+  
+    html.dark .bg-white {
+      background-color: #1e293b !important;
+    }
+  
+    html.dark .text-gray-900 {
+      color: #f1f5f9 !important;
+    }
+  
+    html.dark .text-gray-700 {
+      color: #cbd5e1 !important;
+    }
+  
+    html.dark .text-gray-600 {
+      color: #94a3b8 !important;
+    }
+  
+    html.dark .text-gray-500 {
+      color: #78909c !important;
+    }
+  
+    html.dark .border-gray-200 {
+      border-color: #334155 !important;
+    }
+  
+    html.dark .border-gray-100 {
+      border-color: #1e293b !important;
+    }
+  
+    html.dark .bg-gray-50 {
+      background-color: #1e293b !important;
+    }
+  
+    html.dark .bg-gray-100 {
+      background-color: #334155 !important;
+    }
+  
+    html.dark .hover\:bg-gray-50:hover {
+      background-color: #1e293b !important;
+    }
+  
+    html.dark .hover\:bg-gray-100:hover {
+      background-color: #334155 !important;
+    }
+  
+    html.dark input,
+    html.dark textarea,
+    html.dark select {
+      background-color: #334155 !important;
+      color: #f1f5f9 !important;
+      border-color: #475569 !important;
+    }
+  
+    html.dark input:focus,
+    html.dark textarea:focus,
+    html.dark select:focus {
+      border-color: #10b981 !important;
+    }
+  
+    html.dark .modal-overlay {
+      background-color: rgba(0, 0, 0, 0.7) !important;
+    }
+  
+    /* Scrollbar Dark Mode */
+    html.dark ::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+  
+    html.dark ::-webkit-scrollbar-thumb {
+      background: #475569;
+    }
+  
+    html.dark ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
     * { font-family: 'Inter', system-ui, sans-serif; }
     
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -103,7 +203,30 @@
             AquaSolar
           </h1>
         </div>
+        
+                <!-- ESP32 Status Indicator -->
+        <div id="esp32-status" class="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:border-emerald-300 transition-colors" title="ESP32 Connection Status">
+          <div id="esp32-dot" class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></div>
+          <span class="text-xs font-medium text-gray-600">ESP32</span>
+          <span id="esp32-status-text" class="text-xs text-gray-500">Offline</span>
+        </div>
 
+         <!-- Dark Mode Toggle Button -->
+        <button id="dark-mode-toggle" 
+                class="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 btn-press">
+          <i data-lucide="moon" class="w-5 h-5 text-gray-700 dark:text-gray-300"></i>
+        </button>        <!-- ESP32 Status Indicator -->
+        <div id="esp32-status" class="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:border-emerald-300 transition-colors" title="ESP32 Connection Status">
+          <div id="esp32-dot" class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></div>
+          <span class="text-xs font-medium text-gray-600">ESP32</span>
+          <span id="esp32-status-text" class="text-xs text-gray-500">Offline</span>
+        </div>
+
+         <!-- Dark Mode Toggle Button -->
+        <button id="dark-mode-toggle" 
+                class="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 btn-press">
+          <i data-lucide="moon" class="w-5 h-5 text-gray-700 dark:text-gray-300"></i>
+        </button>
         <!-- Desktop Actions -->
         <div class="hidden sm:flex items-center gap-3">
           <!-- Usage Summary Button -->
@@ -145,7 +268,6 @@
                  class="hidden absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-in">
               <div class="p-4 border-b border-gray-100 bg-gray-50 bg-opacity-50 flex items-center justify-between">
                 <h3 class="font-semibold text-gray-900">History</h3>
-                <button id="clear-history" class="text-xs text-red-500 hover:text-red-700 font-medium transition-colors">Clear all</button>
               </div>
               <ul id="history-list" class="max-h-72 overflow-y-auto divide-y divide-gray-100">
                 <li class="p-4 text-center text-gray-400 text-sm">No history yet</li>
@@ -702,7 +824,7 @@
       <!-- Leakage Detection -->
       <div class="sm:col-span-2 lg:col-span-1 bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-6 card-interactive">
         <div class="flex items-center gap-3 mb-4 sm:mb-6">
-          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-green-100 flex items-center justify-center">
             <i data-lucide="shield-check" class="w-5 h-5 sm:w-6 sm:h-6 text-gray-700"></i>
           </div>
           <h2 class="text-sm sm:text-base font-semibold text-gray-900">Leakage Detection</h2>
@@ -841,7 +963,89 @@
     document.getElementById('end-date').value = today.toISOString().split('T')[0];
     document.getElementById('start-date').value = firstDay.toISOString().split('T')[0];
   }
-
+    // Dark mode & ESP32 functions
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
+  const htmlElement = document.documentElement;
+  
+  // Load dark mode preference
+  function loadDarkMode() {
+    const isDark = localStorage.getItem('aqua_dark_mode') === 'true';
+    if (isDark) {
+      htmlElement.classList.add('dark');
+      updateDarkModeIcon(true);
+    }
+  }
+  
+  // Update dark mode icon
+  function updateDarkModeIcon(isDark) {
+    const icon = darkModeToggle?.querySelector('[data-lucide]');
+    if (!icon) return;
+    if (isDark) {
+      icon.setAttribute('data-lucide', 'sun');
+    } else {
+      icon.setAttribute('data-lucide', 'moon');
+    }
+    lucide.createIcons();
+  }
+  
+  // Toggle dark mode
+  darkModeToggle?.addEventListener('click', () => {
+    const isDark = htmlElement.classList.toggle('dark');
+    localStorage.setItem('aqua_dark_mode', isDark);
+    updateDarkModeIcon(isDark);
+    showToast(isDark ? 'Dark mode enabled' : 'Light mode enabled');
+  });
+  
+  // Initialize dark mode on load
+  loadDarkMode();
+  
+  // ESP32 status check
+  let esp32Connected = false;
+  
+  async function checkESP32Status() {
+    try {
+      const response = await fetch('/status-data');
+      if (response.ok) {
+        const data = await response.json();
+        // expect API to return { esp32_connected: true/false, battery_percent: ..., pump: ... } (if available)
+        esp32Connected = data.esp32_connected === true;
+        updateESP32Indicator(esp32Connected, data);
+      } else {
+        updateESP32Indicator(false);
+        esp32Connected = false;
+      }
+    } catch (error) {
+      console.error('ESP32 check failed:', error);
+      updateESP32Indicator(false);
+      esp32Connected = false;
+    }
+  }
+  
+  function updateESP32Indicator(connected, data = null) {
+    const dot = document.getElementById('esp32-dot');
+    const statusText = document.getElementById('esp32-status-text');
+    const statusContainer = document.getElementById('esp32-status');
+  
+    if (!dot || !statusText || !statusContainer) return;
+  
+    if (connected && data) {
+      dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-glow';
+      statusText.textContent = 'Online';
+      statusContainer.title = `ESP32 Connected\nBattery: ${data.battery_percent ?? '-'}%\nPump: ${data.pump ?? '-'}`;
+      statusContainer.classList.remove('border-gray-200', 'bg-white');
+      statusContainer.classList.add('border-emerald-300', 'bg-emerald-50');
+    } else {
+      dot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse';
+      statusText.textContent = 'Offline';
+      statusContainer.title = 'ESP32 is offline - showing cached data';
+      statusContainer.classList.remove('border-emerald-300', 'bg-emerald-50');
+      statusContainer.classList.add('border-gray-200', 'bg-white');
+    }
+  }
+  
+  // initial check and periodic checks
+  checkESP32Status();
+  setInterval(checkESP32Status, 5000);
   // Usage Summary Modal Functions
   function openUsageSummaryModal() {
     usageModal.classList.remove('hidden');

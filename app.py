@@ -590,6 +590,7 @@ def index():
             "battery_voltage": status.get("battery_voltage_V", 0),
             "current_consumed": status.get("current_A", 0),
             "esp32_online": esp32_online,
+            "esp32_connected": esp32_online,
             **consumption
         }
         
@@ -1031,7 +1032,8 @@ def status_data():
             "current_consumed": status.get("current_A", 0),
             "current_A": status.get("current_A", 0),
             
-            "esp32_online": esp32_online
+            "esp32_online": esp32_online,
+            "esp32_connected": esp32_online
         }
         
         # Merge consumption summary
