@@ -1505,9 +1505,8 @@
 
   // History Functions
   function addHistoryEntry(message) {
-    const time = new Date().toLocaleTimeString();
-    historyData.unshift({ message, time });
-    if (historyData.length > 50) historyData.pop();
+    const now = new Date();
+    const time = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });    if (historyData.length > 50) historyData.pop();
     localStorage.setItem("aqua_history", JSON.stringify(historyData));
     renderHistory();
   }
@@ -1538,7 +1537,8 @@
 
   // Notifications
   function addNotification(message) {
-    const time = new Date().toLocaleTimeString();
+    const now = new Date();
+    const time = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     notifications.unshift({ message, time });
     
     const html = notifications.map(n => `
