@@ -188,6 +188,13 @@
 </head>
 
 <body class="bg-gray-50 min-h-screen">
+  <script type="module">
+    import Chatbot from "https://cdn.jsdelivr.net/gh/Mawlow/FlowwiseChatEmbed@latest/dist/web.js"
+    Chatbot.init({
+        chatflowid: "25d294ae-e6b6-4b51-8737-b1f428c5a40f",
+        apiHost: "https://cloud.flowiseai.com",
+    })
+</script>
   <!-- Mobile Menu Overlay -->
   <div id="mobile-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden lg:hidden" onclick="closeMobileMenu()"></div>
 
