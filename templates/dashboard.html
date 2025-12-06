@@ -707,9 +707,16 @@
           </div>
           <div>
             <h2 class="text-sm sm:text-base font-semibold text-gray-900">Pump Control</h2>
-            <div class="flex items-center gap-2 mt-0">
-              <span id="pump-dot" class="w-2 h-2 rounded-full bg-red-500 transition-all duration-300"></span>
-              <span id="pump-status" class="text-xs sm:text-sm text-gray-500 font-medium">{{ status.pump }}</span>
+                        <div class="flex items-center gap-3 mt-0">
+              <div class="flex items-center gap-2">
+                <span id="pump-dot" class="w-2 h-2 rounded-full bg-red-500 transition-all duration-300"></span>
+                <span id="pump-status" class="text-xs sm:text-sm text-gray-500 font-medium">{{ status.pump }}</span>
+              </div>
+              <div id="esp32-status" class="flex items-center gap-2 px-2 py-1 sm:px-2 rounded-lg border border-gray-200 bg-gray-50 title="ESP32 Connection Status">
+                <div id="esp32-dot" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                <span class="text-xs font-medium text-gray-600">ESP32</span>
+                <span id="esp32-status-text" class="text-xs text-gray-500">Offline</span>
+              </div>
             </div>
           </div>
         </div>
