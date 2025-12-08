@@ -883,13 +883,13 @@
     </div>
   </main>
 
-  <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-4 sm:bottom-4 bg-gray-900 text-white px-4 sm:px-6 py-3 rounded-xl shadow-lg translate-y-20 opacity-0 transition-all duration-300 z-50" style="max-width: 90vw;">
-    <div class="flex items-center gap-3">
-      <i data-lucide="bell" class="w-5 h-5 flex-shrink-0"></i>
-      <span id="toast-message" class="text-sm font-medium"></span>
-    </div>
+<!-- Toast Notification -->
+<div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-4 sm:top-4 bg-gray-900 text-white px-4 sm:px-6 py-3 rounded-xl shadow-lg -translate-y-20 opacity-0 transition-all duration-300 z-50" style="max-width: 90vw;">
+  <div class="flex items-center gap-3">
+    <i data-lucide="bell" class="w-5 h-5 flex-shrink-0"></i>
+    <span id="toast-message" class="text-sm font-medium"></span>
   </div>
+</div>
 
   <script>
   lucide.createIcons();
@@ -1503,9 +1503,9 @@
   // Toast Notification
   function showToast(message) {
     toastMessage.textContent = message;
-    toast.classList.remove("translate-y-20", "opacity-0");
+    toast.classList.remove("-translate-y-20", "opacity-0");
     setTimeout(() => {
-      toast.classList.add("translate-y-20", "opacity-0");
+      toast.classList.add("-translate-y-20", "opacity-0");
     }, 3000);
   }
 
