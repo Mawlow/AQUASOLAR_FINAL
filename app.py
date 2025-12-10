@@ -732,7 +732,7 @@ def download_csv():
             writer.writerow(['DAILY CONSUMPTION DETAILS'])
             writer.writerow([])
             writer.writerow(['Date', 'Water Consumed (L)', 'Pump Cycles', 'Notes'])
-            writer.writerow(['─' * 15, '─' * 18, '─' * 12, '─' * 30])
+            writer.writerow(['-' * 15, '-' * 18, '-' * 12, '-' * 30])
             
             total_consumption = 0
             total_cycles = 0
@@ -753,7 +753,7 @@ def download_csv():
                 total_consumption += row['consumption_total']
                 total_cycles += row['pump_cycles']
             
-            writer.writerow(['─' * 15, '─' * 18, '─' * 12, '─' * 30])
+            writer.writerow(['-' * 15, '-' * 18, '-' * 12, '-' * 30])
             writer.writerow(['TOTAL:', f"{total_consumption:.2f}", total_cycles, ''])
             writer.writerow([])
             writer.writerow(['End of Report'])
@@ -784,7 +784,7 @@ def download_csv():
             writer.writerow(['SENSOR READINGS LOG'])
             writer.writerow([])
             writer.writerow(['Date & Time', 'Sensor ID', 'Reading Value', 'Unit', 'Status'])
-            writer.writerow(['─' * 20, '─' * 15, '─' * 15, '─' * 10, '─' * 15])
+            writer.writerow(['-' * 20, '-' * 15, '-' * 15, '-' * 10, '-' * 15])
             
             for row in usage_data['sensor_logs']:
                 status = 'Normal'
@@ -833,7 +833,7 @@ def download_csv():
             writer.writerow(['POWER MONITORING LOG'])
             writer.writerow([])
             writer.writerow(['Date & Time', 'Voltage (V)', 'Current (A)', 'Battery (%)', 'Battery Status'])
-            writer.writerow(['─' * 20, '─' * 12, '─' * 12, '─' * 12, '─' * 15])
+            writer.writerow(['-' * 20, '-' * 12, '-' * 12, '-' * 12, '-' * 15])
             
             for row in usage_data['power_logs']:
                 battery = row['battery_percent']
@@ -890,7 +890,7 @@ def download_csv():
             writer.writerow(['CONTROL ACTIONS LOG'])
             writer.writerow([])
             writer.writerow(['Date & Time', 'Action', 'Method', 'Details'])
-            writer.writerow(['─' * 20, '─' * 15, '─' * 12, '─' * 35])
+            writer.writerow(['-' * 20, '-' * 15, '-' * 12, '-' * 35])
             
             for row in usage_data['control_logs']:
                 writer.writerow([
@@ -940,7 +940,7 @@ def download_csv():
             writer.writerow(['ALERTS LOG'])
             writer.writerow([])
             writer.writerow(['Date & Time', 'Alert Type', 'Status', 'Details', 'Priority'])
-            writer.writerow(['─' * 20, '─' * 15, '─' * 12, '─' * 30, '─' * 10])
+            writer.writerow(['-' * 20, '-' * 15, '-' * 12, '-' * 30, '-' * 10])
             
             for row in usage_data['alerts']:
                 # Determine priority
@@ -980,7 +980,7 @@ def download_csv():
             writer.writerow(['KEY PERFORMANCE INDICATORS'])
             writer.writerow([])
             writer.writerow(['Metric', 'Value', 'Unit'])
-            writer.writerow(['─' * 35, '─' * 15, '─' * 10])
+            writer.writerow(['-' * 35, '-' * 15, '-' * 10])
             writer.writerow(['Reporting Period Duration', summary['total_days'], 'days'])
             writer.writerow(['Total Water Consumption', f"{summary['total_consumption']:.2f}", 'liters'])
             writer.writerow(['Average Daily Consumption', f"{summary['avg_daily_consumption']:.2f}", 'liters/day'])
@@ -995,7 +995,7 @@ def download_csv():
             writer.writerow(['SYSTEM ACTIVITY SUMMARY'])
             writer.writerow([])
             writer.writerow(['Activity Type', 'Count'])
-            writer.writerow(['─' * 35, '─' * 15])
+            writer.writerow(['-' * 35, '-' * 15])
             writer.writerow(['Sensor Readings Recorded', summary['total_sensor_logs']])
             writer.writerow(['Power Status Checks', summary['total_power_logs']])
             writer.writerow(['Control Actions Performed', summary['total_control_logs']])
@@ -1071,14 +1071,14 @@ def download_report():
         report_date = datetime.now().strftime('%B %d, %Y at %I:%M %p')
         
         # Header Section
-        writer.writerow(['╔' + '═' * 78 + '╗'])
-        writer.writerow(['║' + 'AQUASOLAR WATER MONITORING SYSTEM'.center(78) + '║'])
-        writer.writerow(['║' + 'COMPREHENSIVE USAGE REPORT'.center(78) + '║'])
-        writer.writerow(['╚' + '═' * 78 + '╝'])
+        writer.writerow(['=' * 80])
+        writer.writerow(['AQUASOLAR WATER MONITORING SYSTEM'.center(80)])
+        writer.writerow(['COMPREHENSIVE USAGE REPORT'.center(80)])
+        writer.writerow(['=' * 80])
         writer.writerow([])
         
         writer.writerow(['REPORT INFORMATION'])
-        writer.writerow(['─' * 80])
+        writer.writerow(['-' * 80])
         writer.writerow(['Account Holder:', user_name])
         writer.writerow(['Device Name:', device_name])
         writer.writerow(['Account ID:', account_id])
@@ -1092,10 +1092,10 @@ def download_report():
         
         # Executive Summary
         writer.writerow(['EXECUTIVE SUMMARY'])
-        writer.writerow(['─' * 80])
+        writer.writerow(['-' * 80])
         writer.writerow([])
         writer.writerow(['Metric', 'Value', 'Unit'])
-        writer.writerow(['─' * 35, '─' * 15, '─' * 10])
+        writer.writerow(['-' * 35, '-' * 15, '-' * 10])
         writer.writerow(['Reporting Period', summary['total_days'], 'days'])
         writer.writerow(['Total Water Consumption', f"{summary['total_consumption']:.2f}", 'liters'])
         writer.writerow(['Average Daily Consumption', f"{summary['avg_daily_consumption']:.2f}", 'liters/day'])
@@ -1108,10 +1108,10 @@ def download_report():
         
         # Daily Consumption Section
         writer.writerow(['SECTION 1: DAILY WATER CONSUMPTION'])
-        writer.writerow(['─' * 80])
+        writer.writerow(['-' * 80])
         writer.writerow([])
         writer.writerow(['Date', 'Consumption (L)', 'Pump Cycles', 'Status'])
-        writer.writerow(['─' * 15, '─' * 18, '─' * 12, '─' * 25])
+        writer.writerow(['-' * 15, '-' * 18, '-' * 12, '-' * 25])
         
         for row in usage_data['consumption']:
             status = 'Normal'
@@ -1127,7 +1127,7 @@ def download_report():
                 status
             ])
         
-        writer.writerow(['─' * 15, '─' * 18, '─' * 12, '─' * 25])
+        writer.writerow(['-' * 15, '-' * 18, '-' * 12, '-' * 25])
         writer.writerow(['TOTAL', f"{summary['total_consumption']:.2f}", summary['total_pump_cycles'], ''])
         writer.writerow([])
         writer.writerow(['=' * 80])
@@ -1136,10 +1136,10 @@ def download_report():
         # Alerts Section
         if usage_data['alerts']:
             writer.writerow(['SECTION 2: SYSTEM ALERTS & NOTIFICATIONS'])
-            writer.writerow(['─' * 80])
+            writer.writerow(['-' * 80])
             writer.writerow([])
             writer.writerow(['Date & Time', 'Type', 'Priority', 'Status', 'Details'])
-            writer.writerow(['─' * 20, '─' * 15, '─' * 10, '─' * 12, '─' * 30])
+            writer.writerow(['-' * 20, '-' * 15, '-' * 10, '-' * 12, '-' * 30])
             
             for row in usage_data['alerts']:
                 priority = 'HIGH' if row['alert_type'] == 'Leakage' else 'MEDIUM'
@@ -1161,10 +1161,10 @@ def download_report():
         # Control Logs Section
         if usage_data['control_logs']:
             writer.writerow(['SECTION 3: PUMP CONTROL HISTORY'])
-            writer.writerow(['─' * 80])
+            writer.writerow(['-' * 80])
             writer.writerow([])
             writer.writerow(['Date & Time', 'Action', 'Method', 'Details'])
-            writer.writerow(['─' * 20, '─' * 15, '─' * 12, '─' * 35])
+            writer.writerow(['-' * 20, '-' * 15, '-' * 12, '-' * 35])
             
             for row in usage_data['control_logs'][:20]:  # Last 20 actions
                 writer.writerow([
@@ -1183,7 +1183,7 @@ def download_report():
         
         # System Health
         writer.writerow(['SECTION 4: SYSTEM HEALTH ASSESSMENT'])
-        writer.writerow(['─' * 80])
+        writer.writerow(['-' * 80])
         writer.writerow([])
         
         health_status = 'EXCELLENT'
@@ -1202,7 +1202,7 @@ def download_report():
         
         # Footer
         writer.writerow(['END OF REPORT'])
-        writer.writerow(['─' * 80])
+        writer.writerow(['-' * 80])
         writer.writerow([f'Report generated by AquaSolar Water Monitoring System on {report_date}'])
         writer.writerow(['For questions or support, please contact your system administrator.'])
         
