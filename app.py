@@ -670,14 +670,14 @@ def get_usage_summary():
 
 @app.route("/api/download-csv", methods=["GET"])
 def download_csv():
-    """Download usage data as CSV"""
+    """Download usage data as CSV with formal accounting-style formatting"""
     if not require_login():
         return jsonify({"error": "Not logged in"}), 403
     
     try:
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
-        data_type = request.args.get('type', 'consumption')  # consumption, sensor, power, control, alerts
+        data_type = request.args.get('type', 'consumption')
         
         # Default dates
         if not end_date:
@@ -690,57 +690,342 @@ def download_csv():
         if not usage_data:
             return jsonify({"error": "No data found"}), 404
         
+        # Get user info for header
+        user_name = session.get('user_name', 'User')
+        device_name = session.get('device_name', 'AquaSolar')
+        account_id = session.get('account_id', 'N/A')
+        
         # Create CSV
         output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Generate report timestamp
+        report_date = datetime.now().strftime('%B %d, %Y at %I:%M %p')
         
         if data_type == 'consumption':
-            writer = csv.writer(output)
-            writer.writerow(['Date', 'Total Consumption (L)', 'Pump Cycles'])
+            # Header Section
+            writer.writerow(['AQUASOLAR WATER MONITORING SYSTEM'])
+            writer.writerow(['WATER CONSUMPTION REPORT'])
+            writer.writerow([])
+            writer.writerow(['Report Details'])
+            writer.writerow(['Account Holder:', user_name])
+            writer.writerow(['Device Name:', device_name])
+            writer.writerow(['Account ID:', account_id])
+            writer.writerow(['Report Period:', f"{start_date} to {end_date}"])
+            writer.writerow(['Generated:', report_date])
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
+            # Summary Section
+            summary = usage_data['summary']
+            writer.writerow(['SUMMARY'])
+            writer.writerow(['Total Days in Period:', summary['total_days']])
+            writer.writerow(['Total Water Consumption:', f"{summary['total_consumption']} L"])
+            writer.writerow(['Average Daily Consumption:', f"{summary['avg_daily_consumption']} L"])
+            writer.writerow(['Total Pump Cycles:', summary['total_pump_cycles']])
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
+            # Data Table
+            writer.writerow(['DAILY CONSUMPTION DETAILS'])
+            writer.writerow([])
+            writer.writerow(['Date', 'Water Consumed (L)', 'Pump Cycles', 'Notes'])
+            writer.writerow(['─' * 15, '─' * 18, '─' * 12, '─' * 30])
+            
+            total_consumption = 0
+            total_cycles = 0
+            
             for row in usage_data['consumption']:
-                writer.writerow([row['date'], row['consumption_total'], row['pump_cycles']])
+                notes = ''
+                if row['consumption_total'] > summary['avg_daily_consumption'] * 1.5:
+                    notes = 'Above average usage'
+                elif row['consumption_total'] == 0:
+                    notes = 'No usage recorded'
+                
+                writer.writerow([
+                    row['date'], 
+                    f"{row['consumption_total']:.2f}", 
+                    row['pump_cycles'],
+                    notes
+                ])
+                total_consumption += row['consumption_total']
+                total_cycles += row['pump_cycles']
+            
+            writer.writerow(['─' * 15, '─' * 18, '─' * 12, '─' * 30])
+            writer.writerow(['TOTAL:', f"{total_consumption:.2f}", total_cycles, ''])
+            writer.writerow([])
+            writer.writerow(['End of Report'])
         
         elif data_type == 'sensor':
-            writer = csv.writer(output)
-            writer.writerow(['Timestamp', 'Sensor ID', 'Reading Value', 'Unit'])
+            # Header Section
+            writer.writerow(['AQUASOLAR WATER MONITORING SYSTEM'])
+            writer.writerow(['SENSOR READINGS REPORT'])
+            writer.writerow([])
+            writer.writerow(['Report Details'])
+            writer.writerow(['Account Holder:', user_name])
+            writer.writerow(['Device Name:', device_name])
+            writer.writerow(['Account ID:', account_id])
+            writer.writerow(['Report Period:', f"{start_date} to {end_date}"])
+            writer.writerow(['Generated:', report_date])
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
+            # Summary
+            writer.writerow(['SUMMARY'])
+            writer.writerow(['Total Sensor Readings:', len(usage_data['sensor_logs'])])
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
+            # Data Table
+            writer.writerow(['SENSOR READINGS LOG'])
+            writer.writerow([])
+            writer.writerow(['Date & Time', 'Sensor ID', 'Reading Value', 'Unit', 'Status'])
+            writer.writerow(['─' * 20, '─' * 15, '─' * 15, '─' * 10, '─' * 15])
+            
             for row in usage_data['sensor_logs']:
-                writer.writerow([row['timestamp'], row['sensor_id'], row['reading_value'], row['unit']])
+                status = 'Normal'
+                reading = row['reading_value']
+                if reading > 10:
+                    status = 'High Flow'
+                elif reading == 0:
+                    status = 'No Flow'
+                
+                writer.writerow([
+                    row['timestamp'][:19], 
+                    row['sensor_id'], 
+                    f"{reading:.2f}",
+                    row['unit'],
+                    status
+                ])
+            
+            writer.writerow([])
+            writer.writerow(['End of Report'])
         
         elif data_type == 'power':
-            writer = csv.writer(output)
-            writer.writerow(['Timestamp', 'Voltage (V)', 'Current (A)', 'Battery (%)'])
+            # Header Section
+            writer.writerow(['AQUASOLAR WATER MONITORING SYSTEM'])
+            writer.writerow(['POWER & BATTERY REPORT'])
+            writer.writerow([])
+            writer.writerow(['Report Details'])
+            writer.writerow(['Account Holder:', user_name])
+            writer.writerow(['Device Name:', device_name])
+            writer.writerow(['Account ID:', account_id])
+            writer.writerow(['Report Period:', f"{start_date} to {end_date}"])
+            writer.writerow(['Generated:', report_date])
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
+            # Summary
+            summary = usage_data['summary']
+            writer.writerow(['SUMMARY'])
+            writer.writerow(['Total Power Readings:', len(usage_data['power_logs'])])
+            writer.writerow(['Average Battery Level:', f"{summary['avg_battery_percent']:.1f}%"])
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
+            # Data Table
+            writer.writerow(['POWER MONITORING LOG'])
+            writer.writerow([])
+            writer.writerow(['Date & Time', 'Voltage (V)', 'Current (A)', 'Battery (%)', 'Battery Status'])
+            writer.writerow(['─' * 20, '─' * 12, '─' * 12, '─' * 12, '─' * 15])
+            
             for row in usage_data['power_logs']:
-                writer.writerow([row['timestamp'], row['voltage'], row['current'], row['battery_percent']])
+                battery = row['battery_percent']
+                if battery > 75:
+                    status = 'Good'
+                elif battery > 50:
+                    status = 'Fair'
+                elif battery > 25:
+                    status = 'Low'
+                else:
+                    status = 'Critical'
+                
+                writer.writerow([
+                    row['timestamp'][:19], 
+                    f"{row['voltage']:.2f}",
+                    f"{row['current']:.2f}",
+                    f"{battery:.0f}%",
+                    status
+                ])
+            
+            writer.writerow([])
+            writer.writerow(['End of Report'])
         
         elif data_type == 'control':
-            writer = csv.writer(output)
-            writer.writerow(['Timestamp', 'Action', 'Method', 'Details'])
+            # Header Section
+            writer.writerow(['AQUASOLAR WATER MONITORING SYSTEM'])
+            writer.writerow(['PUMP CONTROL LOG REPORT'])
+            writer.writerow([])
+            writer.writerow(['Report Details'])
+            writer.writerow(['Account Holder:', user_name])
+            writer.writerow(['Device Name:', device_name])
+            writer.writerow(['Account ID:', account_id])
+            writer.writerow(['Report Period:', f"{start_date} to {end_date}"])
+            writer.writerow(['Generated:', report_date])
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
+            # Summary
+            writer.writerow(['SUMMARY'])
+            writer.writerow(['Total Control Actions:', len(usage_data['control_logs'])])
+            
+            # Count actions
+            manual_count = sum(1 for log in usage_data['control_logs'] if log['method'] == 'Manual')
+            remote_count = sum(1 for log in usage_data['control_logs'] if log['method'] == 'Remote')
+            
+            writer.writerow(['Manual Actions:', manual_count])
+            writer.writerow(['Remote Actions:', remote_count])
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
+            # Data Table
+            writer.writerow(['CONTROL ACTIONS LOG'])
+            writer.writerow([])
+            writer.writerow(['Date & Time', 'Action', 'Method', 'Details'])
+            writer.writerow(['─' * 20, '─' * 15, '─' * 12, '─' * 35])
+            
             for row in usage_data['control_logs']:
-                writer.writerow([row['timestamp'], row['action'], row['method'], row['details']])
+                writer.writerow([
+                    row['timestamp'][:19], 
+                    row['action'], 
+                    row['method'], 
+                    row['details']
+                ])
+            
+            writer.writerow([])
+            writer.writerow(['End of Report'])
         
         elif data_type == 'alerts':
-            writer = csv.writer(output)
-            writer.writerow(['Timestamp', 'Alert Type', 'Status', 'Details'])
+            # Header Section
+            writer.writerow(['AQUASOLAR WATER MONITORING SYSTEM'])
+            writer.writerow(['SYSTEM ALERTS REPORT'])
+            writer.writerow([])
+            writer.writerow(['Report Details'])
+            writer.writerow(['Account Holder:', user_name])
+            writer.writerow(['Device Name:', device_name])
+            writer.writerow(['Account ID:', account_id])
+            writer.writerow(['Report Period:', f"{start_date} to {end_date}"])
+            writer.writerow(['Generated:', report_date])
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
+            # Summary
+            summary = usage_data['summary']
+            writer.writerow(['SUMMARY'])
+            writer.writerow(['Total Alerts:', summary['total_alerts']])
+            
+            # Count by type
+            alert_types = {}
+            for alert in usage_data['alerts']:
+                alert_type = alert['alert_type']
+                alert_types[alert_type] = alert_types.get(alert_type, 0) + 1
+            
+            for alert_type, count in alert_types.items():
+                writer.writerow([f'{alert_type} Alerts:', count])
+            
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
+            # Data Table
+            writer.writerow(['ALERTS LOG'])
+            writer.writerow([])
+            writer.writerow(['Date & Time', 'Alert Type', 'Status', 'Details', 'Priority'])
+            writer.writerow(['─' * 20, '─' * 15, '─' * 12, '─' * 30, '─' * 10])
+            
             for row in usage_data['alerts']:
-                writer.writerow([row['timestamp'], row['alert_type'], row['status'], row['details']])
+                # Determine priority
+                priority = 'High' if row['alert_type'] == 'Leakage' else 'Medium'
+                if 'Battery' in row['alert_type']:
+                    priority = 'Low'
+                
+                writer.writerow([
+                    row['timestamp'][:19], 
+                    row['alert_type'], 
+                    row['status'], 
+                    row['details'],
+                    priority
+                ])
+            
+            writer.writerow([])
+            writer.writerow(['End of Report'])
         
         elif data_type == 'summary':
-            writer = csv.writer(output)
-            writer.writerow(['Metric', 'Value'])
+            # Header Section
+            writer.writerow(['AQUASOLAR WATER MONITORING SYSTEM'])
+            writer.writerow(['EXECUTIVE SUMMARY REPORT'])
+            writer.writerow([])
+            writer.writerow(['Report Details'])
+            writer.writerow(['Account Holder:', user_name])
+            writer.writerow(['Device Name:', device_name])
+            writer.writerow(['Account ID:', account_id])
+            writer.writerow(['Report Period:', f"{start_date} to {end_date}"])
+            writer.writerow(['Generated:', report_date])
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
             summary = usage_data['summary']
-            writer.writerow(['Date Range', f"{summary['start_date']} to {summary['end_date']}"])
-            writer.writerow(['Total Days', summary['total_days']])
-            writer.writerow(['Total Consumption (L)', summary['total_consumption']])
-            writer.writerow(['Total Pump Cycles', summary['total_pump_cycles']])
-            writer.writerow(['Avg Daily Consumption (L)', summary['avg_daily_consumption']])
-            writer.writerow(['Avg Battery (%)', summary['avg_battery_percent']])
-            writer.writerow(['Total Alerts', summary['total_alerts']])
+            
+            # Key Metrics
+            writer.writerow(['KEY PERFORMANCE INDICATORS'])
+            writer.writerow([])
+            writer.writerow(['Metric', 'Value', 'Unit'])
+            writer.writerow(['─' * 35, '─' * 15, '─' * 10])
+            writer.writerow(['Reporting Period Duration', summary['total_days'], 'days'])
+            writer.writerow(['Total Water Consumption', f"{summary['total_consumption']:.2f}", 'liters'])
+            writer.writerow(['Average Daily Consumption', f"{summary['avg_daily_consumption']:.2f}", 'liters/day'])
+            writer.writerow(['Total Pump Operations', summary['total_pump_cycles'], 'cycles'])
+            writer.writerow(['Average Battery Level', f"{summary['avg_battery_percent']:.1f}", '%'])
+            writer.writerow(['Total System Alerts', summary['total_alerts'], 'alerts'])
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
+            # Activity Summary
+            writer.writerow(['SYSTEM ACTIVITY SUMMARY'])
+            writer.writerow([])
+            writer.writerow(['Activity Type', 'Count'])
+            writer.writerow(['─' * 35, '─' * 15])
+            writer.writerow(['Sensor Readings Recorded', summary['total_sensor_logs']])
+            writer.writerow(['Power Status Checks', summary['total_power_logs']])
+            writer.writerow(['Control Actions Performed', summary['total_control_logs']])
+            writer.writerow(['Alerts Generated', summary['total_alerts']])
+            writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+            
+            # System Health
+            writer.writerow(['SYSTEM HEALTH INDICATORS'])
+            writer.writerow([])
+            
+            health_status = 'Excellent'
+            if summary['total_alerts'] > 5:
+                health_status = 'Needs Attention'
+            elif summary['total_alerts'] > 2:
+                health_status = 'Good'
+            
+            writer.writerow(['Overall System Status:', health_status])
+            writer.writerow(['Average Battery Health:', f"{summary['avg_battery_percent']:.1f}%"])
+            writer.writerow(['Pump Efficiency:', 'Normal' if summary['total_pump_cycles'] > 0 else 'Check Required'])
+            writer.writerow([])
+            writer.writerow(['End of Report'])
         
         else:
             return jsonify({"error": "Invalid data type"}), 400
         
         output.seek(0)
         
-        filename = f"aquasolar_{data_type}_{start_date}_to_{end_date}.csv"
+        filename = f"AquaSolar_{data_type.upper()}_{start_date}_to_{end_date}.csv"
         
         return Response(
             output.getvalue(),
@@ -773,51 +1058,157 @@ def download_report():
         if not usage_data:
             return jsonify({"error": "No data found"}), 404
         
+        # Get user info for header
+        user_name = session.get('user_name', 'User')
+        device_name = session.get('device_name', 'AquaSolar')
+        account_id = session.get('account_id', 'N/A')
+        
         # Create comprehensive CSV report
         output = io.StringIO()
         writer = csv.writer(output)
         
-        # Summary Section
-        writer.writerow(['=== AQUASOLAR USAGE REPORT ==='])
+        # Generate report timestamp
+        report_date = datetime.now().strftime('%B %d, %Y at %I:%M %p')
+        
+        # Header Section
+        writer.writerow(['╔' + '═' * 78 + '╗'])
+        writer.writerow(['║' + 'AQUASOLAR WATER MONITORING SYSTEM'.center(78) + '║'])
+        writer.writerow(['║' + 'COMPREHENSIVE USAGE REPORT'.center(78) + '║'])
+        writer.writerow(['╚' + '═' * 78 + '╝'])
         writer.writerow([])
-        writer.writerow(['SUMMARY'])
-        writer.writerow(['Metric', 'Value'])
+        
+        writer.writerow(['REPORT INFORMATION'])
+        writer.writerow(['─' * 80])
+        writer.writerow(['Account Holder:', user_name])
+        writer.writerow(['Device Name:', device_name])
+        writer.writerow(['Account ID:', account_id])
+        writer.writerow(['Report Period:', f"{start_date} to {end_date}"])
+        writer.writerow(['Report Generated:', report_date])
+        writer.writerow([])
+        writer.writerow(['=' * 80])
+        writer.writerow([])
+        
         summary = usage_data['summary']
-        writer.writerow(['Report Generated', datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
-        writer.writerow(['Date Range', f"{summary['start_date']} to {summary['end_date']}"])
-        writer.writerow(['Total Days', summary['total_days']])
-        writer.writerow(['Total Water Consumption (L)', summary['total_consumption']])
-        writer.writerow(['Total Pump Cycles', summary['total_pump_cycles']])
-        writer.writerow(['Average Daily Consumption (L)', summary['avg_daily_consumption']])
-        writer.writerow(['Average Battery Level (%)', summary['avg_battery_percent']])
-        writer.writerow(['Total Alerts', summary['total_alerts']])
+        
+        # Executive Summary
+        writer.writerow(['EXECUTIVE SUMMARY'])
+        writer.writerow(['─' * 80])
+        writer.writerow([])
+        writer.writerow(['Metric', 'Value', 'Unit'])
+        writer.writerow(['─' * 35, '─' * 15, '─' * 10])
+        writer.writerow(['Reporting Period', summary['total_days'], 'days'])
+        writer.writerow(['Total Water Consumption', f"{summary['total_consumption']:.2f}", 'liters'])
+        writer.writerow(['Average Daily Consumption', f"{summary['avg_daily_consumption']:.2f}", 'liters/day'])
+        writer.writerow(['Total Pump Cycles', summary['total_pump_cycles'], 'cycles'])
+        writer.writerow(['Average Battery Level', f"{summary['avg_battery_percent']:.1f}", '%'])
+        writer.writerow(['Total System Alerts', summary['total_alerts'], 'alerts'])
+        writer.writerow([])
+        writer.writerow(['=' * 80])
         writer.writerow([])
         
         # Daily Consumption Section
-        writer.writerow(['DAILY CONSUMPTION'])
-        writer.writerow(['Date', 'Consumption (L)', 'Pump Cycles'])
+        writer.writerow(['SECTION 1: DAILY WATER CONSUMPTION'])
+        writer.writerow(['─' * 80])
+        writer.writerow([])
+        writer.writerow(['Date', 'Consumption (L)', 'Pump Cycles', 'Status'])
+        writer.writerow(['─' * 15, '─' * 18, '─' * 12, '─' * 25])
+        
         for row in usage_data['consumption']:
-            writer.writerow([row['date'], row['consumption_total'], row['pump_cycles']])
+            status = 'Normal'
+            if row['consumption_total'] > summary['avg_daily_consumption'] * 1.5:
+                status = 'Above Average'
+            elif row['consumption_total'] == 0:
+                status = 'No Usage'
+            
+            writer.writerow([
+                row['date'], 
+                f"{row['consumption_total']:.2f}", 
+                row['pump_cycles'],
+                status
+            ])
+        
+        writer.writerow(['─' * 15, '─' * 18, '─' * 12, '─' * 25])
+        writer.writerow(['TOTAL', f"{summary['total_consumption']:.2f}", summary['total_pump_cycles'], ''])
+        writer.writerow([])
+        writer.writerow(['=' * 80])
         writer.writerow([])
         
         # Alerts Section
         if usage_data['alerts']:
-            writer.writerow(['ALERTS'])
-            writer.writerow(['Timestamp', 'Type', 'Status', 'Details'])
+            writer.writerow(['SECTION 2: SYSTEM ALERTS & NOTIFICATIONS'])
+            writer.writerow(['─' * 80])
+            writer.writerow([])
+            writer.writerow(['Date & Time', 'Type', 'Priority', 'Status', 'Details'])
+            writer.writerow(['─' * 20, '─' * 15, '─' * 10, '─' * 12, '─' * 30])
+            
             for row in usage_data['alerts']:
-                writer.writerow([row['timestamp'], row['alert_type'], row['status'], row['details']])
+                priority = 'HIGH' if row['alert_type'] == 'Leakage' else 'MEDIUM'
+                if 'Battery' in row['alert_type']:
+                    priority = 'LOW'
+                
+                writer.writerow([
+                    row['timestamp'][:19], 
+                    row['alert_type'], 
+                    priority,
+                    row['status'], 
+                    row['details']
+                ])
+            
+            writer.writerow([])
+            writer.writerow(['=' * 80])
             writer.writerow([])
         
         # Control Logs Section
         if usage_data['control_logs']:
-            writer.writerow(['CONTROL LOGS'])
-            writer.writerow(['Timestamp', 'Action', 'Method', 'Details'])
-            for row in usage_data['control_logs']:
-                writer.writerow([row['timestamp'], row['action'], row['method'], row['details']])
+            writer.writerow(['SECTION 3: PUMP CONTROL HISTORY'])
+            writer.writerow(['─' * 80])
+            writer.writerow([])
+            writer.writerow(['Date & Time', 'Action', 'Method', 'Details'])
+            writer.writerow(['─' * 20, '─' * 15, '─' * 12, '─' * 35])
+            
+            for row in usage_data['control_logs'][:20]:  # Last 20 actions
+                writer.writerow([
+                    row['timestamp'][:19], 
+                    row['action'], 
+                    row['method'], 
+                    row['details']
+                ])
+            
+            writer.writerow([])
+            if len(usage_data['control_logs']) > 20:
+                writer.writerow([f'Note: Showing last 20 of {len(usage_data["control_logs"])} total control actions'])
+                writer.writerow([])
+            writer.writerow(['=' * 80])
+            writer.writerow([])
+        
+        # System Health
+        writer.writerow(['SECTION 4: SYSTEM HEALTH ASSESSMENT'])
+        writer.writerow(['─' * 80])
+        writer.writerow([])
+        
+        health_status = 'EXCELLENT'
+        if summary['total_alerts'] > 5:
+            health_status = 'NEEDS ATTENTION'
+        elif summary['total_alerts'] > 2:
+            health_status = 'GOOD'
+        
+        writer.writerow(['Overall System Status:', health_status])
+        writer.writerow(['Battery Health:', f"{summary['avg_battery_percent']:.1f}% - {'Good' if summary['avg_battery_percent'] > 50 else 'Fair'}"])
+        writer.writerow(['Pump Operations:', f"{summary['total_pump_cycles']} cycles - {'Normal' if summary['total_pump_cycles'] > 0 else 'Check Required'}"])
+        writer.writerow(['Monitoring Activity:', f"{summary['total_sensor_logs']} sensor readings recorded"])
+        writer.writerow([])
+        writer.writerow(['=' * 80])
+        writer.writerow([])
+        
+        # Footer
+        writer.writerow(['END OF REPORT'])
+        writer.writerow(['─' * 80])
+        writer.writerow([f'Report generated by AquaSolar Water Monitoring System on {report_date}'])
+        writer.writerow(['For questions or support, please contact your system administrator.'])
         
         output.seek(0)
         
-        filename = f"aquasolar_full_report_{start_date}_to_{end_date}.csv"
+        filename = f"AquaSolar_FULL_REPORT_{start_date}_to_{end_date}.csv"
         
         return Response(
             output.getvalue(),
@@ -1392,11 +1783,11 @@ def health():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print("\n" + "=" * 50)
-    print("🌊 AquaSolar Flask Server (MULTI-USER + USAGE REPORTS)")
+    print("🌊 AquaSolar Flask Server (MULTI-USER + FORMAL REPORTS)")
     print(f"📊 Sensor logging: Every {SENSOR_LOG_INTERVAL}s")
     print(f"🔋 Power logging: Every {POWER_LOG_INTERVAL}s")
     print(f"💧 Consumption updates: Every {CONSUMPTION_UPDATE_INTERVAL}s")
     print("👥 Multi-user support: ENABLED")
-    print("📈 Usage Reports: ENABLED")
+    print("📈 Formal CSV Reports: ENABLED")
     print("=" * 50 + "\n")
     app.run(host="0.0.0.0", port=port, debug=False)
